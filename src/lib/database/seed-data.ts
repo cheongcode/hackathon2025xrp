@@ -6,7 +6,7 @@ import { generateDIDFromAddress, generatePseudonymousId } from '@/lib/xrpl/clien
 export const TEST_ACCOUNTS: DatabaseUser[] = [
   // Borrowers
   {
-    address: 'rN1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P',
+    address: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
     name: 'Maria Santos',
     role: 'borrower',
     balance: 5000,
@@ -240,7 +240,7 @@ export const TEST_LOANS: DatabaseLoan[] = [
   // Available loans (PENDING)
   {
     id: 'loan-001',
-    borrowerAddress: 'rN1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P',
+    borrowerAddress: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
     borrowerDID: 'did:xrpl:N1A2B3C4:1704157200000',
     pseudonymousId: 'USER-MARIA789',
     amount: 2500,
@@ -314,7 +314,7 @@ export const TEST_LOANS: DatabaseLoan[] = [
   // Funded loans
   {
     id: 'loan-005',
-    borrowerAddress: 'rN1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P',
+    borrowerAddress: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
     borrowerDID: 'did:xrpl:N1A2B3C4:1704157200000',
     pseudonymousId: 'USER-MARIA789',
     amount: 1500,
@@ -384,7 +384,7 @@ export const TEST_LOANS: DatabaseLoan[] = [
   },
   {
     id: 'loan-008',
-    borrowerAddress: 'rN1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P',
+    borrowerAddress: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
     borrowerDID: 'did:xrpl:N1A2B3C4:1704157200000',
     pseudonymousId: 'USER-MARIA789',
     amount: 800,
@@ -444,7 +444,7 @@ export async function seedDatabase(): Promise<void> {
         id: 'tx-001',
         type: 'loan_funded',
         fromAddress: 'rS5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9T4',
-        toAddress: 'rN1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P',
+        toAddress: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
         amount: 1500,
         currency: 'RLUSD',
         txHash: 'TX12345678901234567890ABCDEF123456789012345678',
@@ -481,7 +481,7 @@ export async function seedDatabase(): Promise<void> {
       {
         id: 'tx-004',
         type: 'repayment',
-        fromAddress: 'rN1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P',
+        fromAddress: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
         toAddress: 'rV8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2W7',
         amount: 849.6, // 800 + 6.2% interest
         currency: 'RLUSD',
@@ -503,7 +503,7 @@ export async function seedDatabase(): Promise<void> {
         id: 'escrow-12345-67890',
         loanId: 'loan-005',
         lenderAddress: 'rS5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9T4',
-        borrowerAddress: 'rN1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P',
+        borrowerAddress: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
         amount: 1500,
         currency: 'RLUSD',
         createdAt: Date.now() - 86400000 * 10,

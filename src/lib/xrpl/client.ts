@@ -650,6 +650,11 @@ export const DEMO_TESTNET_WALLETS = {
     address: 'rGHXgzacLvRGLbkfDhJcpzoV2RPsFZDFuS',
     name: 'loanshark (Testnet)',
   },
+  mrisntos: {
+    seed: 'sEd7si1P24cs2n3QYXQuZR9eCZpLG8c',
+    address: 'rPsaLGFwviwB3wJrjTUb5tkdnqpGv82qf4',
+    name: 'mrisntos (Testnet)',
+  },
 };
 
 // Debug function for testing XRP transactions
