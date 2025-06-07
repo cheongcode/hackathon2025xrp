@@ -5,12 +5,14 @@ import { User, LoanRequest, ReputationScore } from '@/types';
 import { MOCK_USERS, MOCK_REPUTATION_SCORES } from '@/types';
 import { getReputationScore, getUserEscrows } from '@/lib/xrpl/escrow';
 import { generateMockDID, generatePseudonymousId } from '@/lib/xrpl/client';
+import { database, DatabaseUser } from '@/lib/database/db';
+import { seedDatabase, TEST_ACCOUNTS, getTestUsersByRole } from '@/lib/database/seed-data';
 
 export type UserRole = 'borrower' | 'lender' | 'admin';
 export type ViewMode = 'borrower' | 'lender';
 
 export interface AccountState {
-  currentUser: User | null;
+  currentUser: DatabaseUser | null;
   isAuthenticated: boolean;
   viewMode: ViewMode;
   userLoans: LoanRequest[];
@@ -19,6 +21,13 @@ export interface AccountState {
   totalPortfolioValue: number;
   loading: boolean;
   error: string | null;
+  marketplaceStats: {
+    totalFunded: number;
+    activeBorrowers: number;
+    successRate: number;
+    totalLoans: number;
+    totalUsers: number;
+  };
 }
 
 export interface AccountContextType {
@@ -30,6 +39,9 @@ export interface AccountContextType {
   refreshAccountData: () => Promise<void>;
   canAccessBorrower: boolean;
   canAccessLender: boolean;
+  getAllUsers: () => Promise<DatabaseUser[]>;
+  createLoan: (loanData: any) => Promise<void>;
+  fundLoan: (loanId: string, lenderAddress: string, amount: number) => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -44,6 +56,13 @@ const initialState: AccountState = {
   totalPortfolioValue: 0,
   loading: true,
   error: null,
+  marketplaceStats: {
+    totalFunded: 0,
+    activeBorrowers: 0,
+    successRate: 0,
+    totalLoans: 0,
+    totalUsers: 0,
+  },
 };
 
 export function AccountProvider({ children }: { children: ReactNode }) {
@@ -206,6 +225,22 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const canAccessBorrower = canAccessMode('borrower');
   const canAccessLender = canAccessMode('lender');
 
+  const getAllUsers = async () => {
+    // Implementation of getAllUsers function
+    // This is a placeholder and should be replaced with the actual implementation
+    return [];
+  };
+
+  const createLoan = async (loanData: any) => {
+    // Implementation of createLoan function
+    // This is a placeholder and should be replaced with the actual implementation
+  };
+
+  const fundLoan = async (loanId: string, lenderAddress: string, amount: number) => {
+    // Implementation of fundLoan function
+    // This is a placeholder and should be replaced with the actual implementation
+  };
+
   const contextValue: AccountContextType = {
     account,
     switchUser,
@@ -215,6 +250,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     refreshAccountData,
     canAccessBorrower,
     canAccessLender,
+    getAllUsers,
+    createLoan,
+    fundLoan,
   };
 
   return (

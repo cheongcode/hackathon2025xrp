@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Fragment } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Transition } from '@headlessui/react';
 import {
@@ -18,7 +18,7 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { useAccount, ViewMode } from '@/lib/contexts/AccountContext';
-import { MOCK_USERS } from '@/types';
+import { DatabaseUser } from '@/lib/database/db';
 
 interface NavbarProps {
   onAccountSwitch?: () => void;
@@ -31,12 +31,28 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
     switchViewMode, 
     logout,
     refreshAccountData,
+    getAllUsers,
     canAccessBorrower,
     canAccessLender 
   } = useAccount();
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<DatabaseUser[]>([]);
+
+  // Load available users when component mounts
+  useEffect(() => {
+    loadAvailableUsers();
+  }, []);
+
+  const loadAvailableUsers = async () => {
+    try {
+      const users = await getAllUsers();
+      setAvailableUsers(users);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    }
+  };
 
   const handleUserSwitch = async (userId: string) => {
     try {
@@ -51,6 +67,7 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
     setIsRefreshing(true);
     try {
       await refreshAccountData();
+      await loadAvailableUsers(); // Refresh user list too
     } finally {
       setIsRefreshing(false);
     }
@@ -139,6 +156,22 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
               </span>
             </motion.div>
 
+            {/* Marketplace Stats */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="hidden lg:flex items-center space-x-4 text-xs text-slate-400"
+            >
+              <div className="flex items-center space-x-1">
+                <span className="w-2 h-2 bg-success-400 rounded-full"></span>
+                <span>${account.marketplaceStats.totalFunded.toLocaleString()} Funded</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="w-2 h-2 bg-secondary-400 rounded-full"></span>
+                <span>{account.marketplaceStats.activeBorrowers} Active</span>
+              </div>
+            </motion.div>
+
             {/* Notifications */}
             <div className="relative">
               <motion.button
@@ -163,12 +196,16 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
                       <h3 className="text-lg font-bold text-slate-100 mb-3">Notifications</h3>
                       <div className="space-y-2">
                         <div className="p-3 bg-success-500/10 border border-success-400/30 rounded-lg">
-                          <p className="text-success-400 text-sm font-medium">Loan Approved</p>
-                          <p className="text-slate-300 text-xs">Your $500 loan request has been approved</p>
+                          <p className="text-success-400 text-sm font-medium">New Loan Opportunity</p>
+                          <p className="text-slate-300 text-xs">Agricultural loan request matching your criteria</p>
                         </div>
                         <div className="p-3 bg-secondary-500/10 border border-secondary-400/30 rounded-lg">
-                          <p className="text-secondary-400 text-sm font-medium">New Opportunity</p>
-                          <p className="text-slate-300 text-xs">5 new loan requests match your criteria</p>
+                          <p className="text-secondary-400 text-sm font-medium">Repayment Received</p>
+                          <p className="text-slate-300 text-xs">$1,296 RLUSD received with 8% interest</p>
+                        </div>
+                        <div className="p-3 bg-accent-500/10 border border-accent-400/30 rounded-lg">
+                          <p className="text-accent-400 text-sm font-medium">Trust Score Updated</p>
+                          <p className="text-slate-300 text-xs">Your trust score increased to 94/100</p>
                         </div>
                       </div>
                     </div>
@@ -191,12 +228,21 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
             {/* User Menu */}
             <Menu as="div" className="relative">
               <Menu.Button className="flex items-center space-x-3 p-2 text-slate-200 hover:bg-dark-50/30 rounded-lg transition-all duration-300">
-                <div className="w-8 h-8 bg-gradient-to-r from-secondary-500 to-primary-500 rounded-full flex items-center justify-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  account.currentUser.role === 'lender' 
+                    ? 'bg-gradient-to-r from-success-500 to-secondary-500' 
+                    : 'bg-gradient-to-r from-secondary-500 to-primary-500'
+                }`}>
                   <UserIcon className="h-5 w-5 text-white" />
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium text-slate-100">{account.currentUser?.name}</p>
-                  <p className="text-xs text-slate-400 capitalize">{account.currentUser?.role}</p>
+                  <p className="text-xs text-slate-400 capitalize flex items-center space-x-2">
+                    <span>{account.currentUser?.role}</span>
+                    {account.currentUser?.role === 'lender' && (
+                      <span className="text-success-400">•</span>
+                    )}
+                  </p>
                 </div>
                 <ChevronDownIcon className="h-4 w-4 text-slate-400" />
               </Menu.Button>
@@ -215,7 +261,11 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
                     {/* Current User Info */}
                     <div className="border-b border-slate-400/20 pb-4 mb-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-r from-secondary-500 to-primary-500 rounded-full flex items-center justify-center">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          account.currentUser.role === 'lender' 
+                            ? 'bg-gradient-to-r from-success-500 to-secondary-500' 
+                            : 'bg-gradient-to-r from-secondary-500 to-primary-500'
+                        }`}>
                           <UserIcon className="h-6 w-6 text-white" />
                         </div>
                         <div>
@@ -224,6 +274,9 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
                           <div className="flex items-center space-x-2 mt-1">
                             <ShieldCheckIcon className="h-3 w-3 text-success-400" />
                             <span className="text-xs text-success-400 font-medium">Verified</span>
+                            <span className="text-xs text-slate-500">
+                              ID: {account.currentUser.pseudonymousId || 'N/A'}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -231,9 +284,12 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
 
                     {/* Switch User */}
                     <div className="mb-4">
-                      <p className="text-sm font-bold text-slate-200 mb-2">Switch Account</p>
-                      <div className="space-y-1 max-h-40 overflow-y-auto">
-                        {MOCK_USERS.map((user) => (
+                      <p className="text-sm font-bold text-slate-200 mb-2 flex items-center">
+                        <ArrowsRightLeftIcon className="h-4 w-4 mr-2" />
+                        Switch Account ({availableUsers.length} available)
+                      </p>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {availableUsers.map((user) => (
                           <Menu.Item key={user.address}>
                             {({ active }) => (
                               <button
@@ -249,10 +305,14 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
                                 </div>
                                 <div className="flex-1">
                                   <p className="font-medium">{user.name}</p>
-                                  <p className="text-xs opacity-70">{user.role} • ${user.balance?.toLocaleString() || '0'}</p>
+                                  <p className="text-xs opacity-70 flex items-center space-x-2">
+                                    <span className="capitalize">{user.role}</span>
+                                    <span>•</span>
+                                    <span>${user.balance?.toLocaleString() || '0'} RLUSD</span>
+                                  </p>
                                 </div>
                                 {account.currentUser && account.currentUser.address === user.address && (
-                                  <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
+                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></div>
                                 )}
                               </button>
                             )}
