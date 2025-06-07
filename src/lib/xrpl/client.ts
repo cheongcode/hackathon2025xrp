@@ -645,6 +645,11 @@ export const DEMO_TESTNET_WALLETS = {
     address: 'rU7G8H9I0J1K2L3M4N5O6P7Q8R9S0T1V6', // Match database Sarah Williams address
     name: 'Sarah Williams (Testnet)',
   },
+  loanshark: {
+    seed: 'sEdTJq5yCVqWDqogNHmTEdvn7ePTACd',
+    address: 'rGHXgzacLvRGLbkfDhJcpzoV2RPsFZDFuS',
+    name: 'loanshark (Testnet)',
+  },
 };
 
 // Debug function for testing XRP transactions

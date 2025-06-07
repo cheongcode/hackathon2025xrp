@@ -142,6 +142,21 @@ export const TEST_ACCOUNTS: DatabaseUser[] = [
       riskTolerance: 'low' as const,
     },
   },
+  {
+    address: 'rGHXgzacLvRGLbkfDhJcpzoV2RPsFZDFuS',
+    name: 'lonshrk',
+    role: 'lender',
+    balance: 25000,
+    did: 'did:xrpl:V8H9I0J1:1704157900000',
+    pseudonymousId: 'LENDER-lonshrk',
+    createdAt: Date.now() - 86400000 * 75,
+    lastActive: Date.now() - 3600000,
+    preferences: {
+      notifications: false,
+      autoFunding: false,
+      riskTolerance: 'low' as const,
+    },
+  },
 ];
 
 // Reputation scores for all users
