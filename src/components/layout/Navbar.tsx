@@ -1,90 +1,117 @@
 'use client';
 
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Transition } from '@headlessui/react';
-import {
-  UserIcon,
+import { useAccount } from '@/lib/contexts/AccountContext';
+import { 
+  UserCircleIcon, 
   ChevronDownIcon,
-  ArrowsRightLeftIcon,
   ArrowRightOnRectangleIcon,
-  CogIcon,
-  BellIcon,
-  WalletIcon,
+  CurrencyDollarIcon,
   ShieldCheckIcon,
   EyeIcon,
+  Cog6ToothIcon,
   BanknotesIcon,
-  SparklesIcon,
-  ArrowPathIcon
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
-import { useAccount, ViewMode } from '@/lib/contexts/AccountContext';
 import { DatabaseUser } from '@/lib/database/db';
 
-interface NavbarProps {
-  onAccountSwitch?: () => void;
-}
-
-export default function Navbar({ onAccountSwitch }: NavbarProps) {
-  const { 
-    account, 
-    switchUser, 
-    switchViewMode, 
-    logout,
-    refreshAccountData,
-    getAllUsers,
-    canAccessBorrower,
-    canAccessLender 
-  } = useAccount();
-  
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+export default function Navbar() {
+  const { account, switchUser, switchViewMode, logout, getAllUsers, canAccessLender } = useAccount();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showAccountSelector, setShowAccountSelector] = useState(false);
   const [availableUsers, setAvailableUsers] = useState<DatabaseUser[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Load available users when component mounts
   useEffect(() => {
     loadAvailableUsers();
-  }, []);
+  }, [account.databaseInitialized]);
 
   const loadAvailableUsers = async () => {
-    try {
-      const users = await getAllUsers();
-      setAvailableUsers(users);
-    } catch (error) {
-      console.error('Failed to load users:', error);
+    if (account.databaseInitialized) {
+      try {
+        const users = await getAllUsers();
+        setAvailableUsers(users);
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      }
     }
   };
 
   const handleUserSwitch = async (userId: string) => {
+    setLoading(true);
     try {
       await switchUser(userId);
-      onAccountSwitch?.();
+      setShowAccountSelector(false);
+      setShowUserMenu(false);
     } catch (error) {
       console.error('Failed to switch user:', error);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refreshAccountData();
-      await loadAvailableUsers(); // Refresh user list too
     } finally {
-      setIsRefreshing(false);
+      setLoading(false);
     }
   };
 
-  const handleViewModeSwitch = (mode: ViewMode) => {
+  const handleViewModeSwitch = (mode: 'borrower' | 'lender') => {
     switchViewMode(mode);
+    setShowUserMenu(false);
   };
 
-  if (!account.currentUser) {
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    setShowAccountSelector(false);
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'borrower':
+        return <UserCircleIcon className="h-4 w-4" />;
+      case 'lender':
+        return <BanknotesIcon className="h-4 w-4" />;
+      default:
+        return <UserGroupIcon className="h-4 w-4" />;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'borrower':
+        return 'text-secondary-400';
+      case 'lender':
+        return 'text-success-400';
+      default:
+        return 'text-slate-400';
+    }
+  };
+
+  if (!account.isAuthenticated) {
     return (
-      <nav className="bg-dark-900/80 backdrop-blur-lg border-b border-slate-400/20">
+      <nav className="bg-dark-900/80 backdrop-blur-xl border-b border-slate-800/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <SparklesIcon className="h-8 w-8 text-secondary-400 mr-3" />
-              <h1 className="text-xl font-bold gradient-text">MicroLoanX</h1>
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center space-x-3"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
+                  <CurrencyDollarIcon className="h-5 w-5 text-white" />
+                </div>
+                <h1 className="text-xl font-bold gradient-text">MicroLoanX</h1>
+              </motion.div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowAccountSelector(true)}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Select Test Account
+              </motion.button>
             </div>
           </div>
         </div>
@@ -93,292 +120,251 @@ export default function Navbar({ onAccountSwitch }: NavbarProps) {
   }
 
   return (
-    <nav className="bg-dark-900/95 backdrop-blur-lg border-b border-slate-400/20 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo and Brand */}
-          <div className="flex items-center">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center cursor-pointer"
-            >
-              <SparklesIcon className="h-8 w-8 text-secondary-400 mr-3" />
-              <h1 className="text-xl font-bold gradient-text">MicroLoanX</h1>
-            </motion.div>
-          </div>
+    <>
+      <nav className="bg-dark-900/80 backdrop-blur-xl border-b border-slate-800/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo and Title */}
+            <div className="flex items-center space-x-4">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center space-x-3"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
+                  <CurrencyDollarIcon className="h-5 w-5 text-white" />
+                </div>
+                <h1 className="text-xl font-bold gradient-text">MicroLoanX</h1>
+              </motion.div>
 
-          {/* Center - View Mode Toggle */}
-          <div className="flex items-center space-x-4">
-            <div className="flex bg-dark-50/20 rounded-lg p-1">
-              <motion.button
-                onClick={() => handleViewModeSwitch('borrower')}
-                disabled={!canAccessBorrower}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
-                  account.viewMode === 'borrower'
-                    ? 'bg-gradient-to-r from-secondary-600 to-primary-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-dark-50/30'
-                } ${!canAccessBorrower ? 'opacity-50 cursor-not-allowed' : ''}`}
-                whileHover={canAccessBorrower ? { scale: 1.02 } : {}}
-                whileTap={canAccessBorrower ? { scale: 0.98 } : {}}
-              >
-                <UserIcon className="h-4 w-4" />
-                <span>Borrower</span>
-              </motion.button>
-              
-              <motion.button
-                onClick={() => handleViewModeSwitch('lender')}
-                disabled={!canAccessLender}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
-                  account.viewMode === 'lender'
-                    ? 'bg-gradient-to-r from-success-600 to-accent-600 text-white shadow-lg'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-dark-50/30'
-                } ${!canAccessLender ? 'opacity-50 cursor-not-allowed' : ''}`}
-                whileHover={canAccessLender ? { scale: 1.02 } : {}}
-                whileTap={canAccessLender ? { scale: 0.98 } : {}}
-              >
-                <BanknotesIcon className="h-4 w-4" />
-                <span>Lender</span>
-              </motion.button>
+              {/* View Mode Switcher */}
+              <div className="hidden md:flex items-center space-x-2 bg-dark-800/50 rounded-lg p-1">
+                <button
+                  onClick={() => handleViewModeSwitch('borrower')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    account.viewMode === 'borrower'
+                      ? 'bg-secondary-600 text-white shadow-lg'
+                      : 'text-slate-400 hover:text-white hover:bg-dark-700'
+                  }`}
+                >
+                  Borrower
+                </button>
+                <button
+                  onClick={() => handleViewModeSwitch('lender')}
+                  disabled={!canAccessLender}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    account.viewMode === 'lender'
+                      ? 'bg-success-600 text-white shadow-lg'
+                      : canAccessLender
+                      ? 'text-slate-400 hover:text-white hover:bg-dark-700'
+                      : 'text-slate-600 cursor-not-allowed'
+                  }`}
+                >
+                  Lender
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Right side - User info and actions */}
-          <div className="flex items-center space-x-4">
-            {/* Balance Display */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="hidden md:flex items-center space-x-2 bg-success-500/10 border border-success-400/30 rounded-lg px-3 py-2"
-            >
-              <WalletIcon className="h-4 w-4 text-success-400" />
-              <span className="text-success-400 font-medium">
-                ${account.availableBalance.toLocaleString()} RLUSD
-              </span>
-            </motion.div>
-
-            {/* Marketplace Stats */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="hidden lg:flex items-center space-x-4 text-xs text-slate-400"
-            >
-              <div className="flex items-center space-x-1">
-                <span className="w-2 h-2 bg-success-400 rounded-full"></span>
-                <span>${account.marketplaceStats.totalFunded.toLocaleString()} Funded</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <span className="w-2 h-2 bg-secondary-400 rounded-full"></span>
-                <span>{account.marketplaceStats.activeBorrowers} Active</span>
-              </div>
-            </motion.div>
-
-            {/* Notifications */}
-            <div className="relative">
-              <motion.button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-dark-50/30 rounded-lg transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <BellIcon className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-accent-500 rounded-full"></span>
-              </motion.button>
-
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 mt-2 w-80 glass-card border-slate-400/30 shadow-xl z-50"
-                  >
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-slate-100 mb-3">Notifications</h3>
-                      <div className="space-y-2">
-                        <div className="p-3 bg-success-500/10 border border-success-400/30 rounded-lg">
-                          <p className="text-success-400 text-sm font-medium">New Loan Opportunity</p>
-                          <p className="text-slate-300 text-xs">Agricultural loan request matching your criteria</p>
-                        </div>
-                        <div className="p-3 bg-secondary-500/10 border border-secondary-400/30 rounded-lg">
-                          <p className="text-secondary-400 text-sm font-medium">Repayment Received</p>
-                          <p className="text-slate-300 text-xs">$1,296 RLUSD received with 8% interest</p>
-                        </div>
-                        <div className="p-3 bg-accent-500/10 border border-accent-400/30 rounded-lg">
-                          <p className="text-accent-400 text-sm font-medium">Trust Score Updated</p>
-                          <p className="text-slate-300 text-xs">Your trust score increased to 94/100</p>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+            {/* User Info and Menu */}
+            <div className="flex items-center space-x-4">
+              {/* Balance Display */}
+              <div className="hidden sm:flex items-center space-x-3 bg-dark-800/50 rounded-lg px-3 py-2">
+                <div className="flex items-center space-x-2">
+                  <BanknotesIcon className="h-4 w-4 text-success-400" />
+                  <span className="text-sm font-medium text-slate-300">
+                    ${account.availableBalance.toLocaleString()} RLUSD
+                  </span>
+                </div>
+                {account.userReputation && (
+                  <div className="flex items-center space-x-2 border-l border-slate-700 pl-3">
+                    <ShieldCheckIcon className="h-4 w-4 text-accent-400" />
+                    <span className="text-sm font-medium text-slate-300">
+                      {account.userReputation.trustScore}/100
+                    </span>
+                  </div>
                 )}
-              </AnimatePresence>
-            </div>
+              </div>
 
-            {/* Refresh Button */}
-            <motion.button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="p-2 text-slate-400 hover:text-slate-200 hover:bg-dark-50/30 rounded-lg transition-all duration-300 disabled:opacity-50"
-              whileHover={!isRefreshing ? { scale: 1.05 } : {}}
-              whileTap={!isRefreshing ? { scale: 0.95 } : {}}
-            >
-              <ArrowPathIcon className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </motion.button>
+              {/* User Menu */}
+              <div className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-3 bg-dark-800/50 hover:bg-dark-700/50 rounded-lg px-3 py-2 transition-colors"
+                >
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center`}>
+                      <span className="text-sm font-bold text-white">
+                        {account.currentUser?.name.charAt(0) || 'U'}
+                      </span>
+                    </div>
+                    <div className="hidden md:block text-left">
+                      <p className="text-sm font-medium text-white">
+                        {account.currentUser?.name || 'Unknown User'}
+                      </p>
+                      <p className={`text-xs ${getRoleColor(account.currentUser?.role || '')}`}>
+                        {account.currentUser?.role || 'Unknown'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronDownIcon className={`h-4 w-4 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                </motion.button>
 
-            {/* User Menu */}
-            <Menu as="div" className="relative">
-              <Menu.Button className="flex items-center space-x-3 p-2 text-slate-200 hover:bg-dark-50/30 rounded-lg transition-all duration-300">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  account.currentUser.role === 'lender' 
-                    ? 'bg-gradient-to-r from-success-500 to-secondary-500' 
-                    : 'bg-gradient-to-r from-secondary-500 to-primary-500'
-                }`}>
-                  <UserIcon className="h-5 w-5 text-white" />
-                </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-slate-100">{account.currentUser?.name}</p>
-                  <p className="text-xs text-slate-400 capitalize flex items-center space-x-2">
-                    <span>{account.currentUser?.role}</span>
-                    {account.currentUser?.role === 'lender' && (
-                      <span className="text-success-400">•</span>
-                    )}
-                  </p>
-                </div>
-                <ChevronDownIcon className="h-4 w-4 text-slate-400" />
-              </Menu.Button>
-
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-200"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <Menu.Items className="absolute right-0 mt-2 w-80 glass-card border-slate-400/30 shadow-xl z-50">
-                  <div className="p-4">
-                    {/* Current User Info */}
-                    <div className="border-b border-slate-400/20 pb-4 mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          account.currentUser.role === 'lender' 
-                            ? 'bg-gradient-to-r from-success-500 to-secondary-500' 
-                            : 'bg-gradient-to-r from-secondary-500 to-primary-500'
-                        }`}>
-                          <UserIcon className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-100">{account.currentUser.name}</p>
-                          <p className="text-sm text-slate-400">{account.currentUser.address.slice(0, 8)}...{account.currentUser.address.slice(-4)}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <ShieldCheckIcon className="h-3 w-3 text-success-400" />
-                            <span className="text-xs text-success-400 font-medium">Verified</span>
-                            <span className="text-xs text-slate-500">
-                              ID: {account.currentUser.pseudonymousId || 'N/A'}
+                {/* User Dropdown Menu */}
+                <AnimatePresence>
+                  {showUserMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-64 bg-dark-800 border border-slate-700 rounded-lg shadow-xl z-50"
+                    >
+                      <div className="p-4 border-b border-slate-700">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+                            <span className="text-sm font-bold text-white">
+                              {account.currentUser?.name.charAt(0) || 'U'}
                             </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-white">{account.currentUser?.name}</p>
+                            <p className="text-sm text-slate-400">{account.currentUser?.pseudonymousId}</p>
+                            <div className="flex items-center space-x-1 mt-1">
+                              {getRoleIcon(account.currentUser?.role || '')}
+                              <span className={`text-xs ${getRoleColor(account.currentUser?.role || '')}`}>
+                                {account.currentUser?.role}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Switch User */}
-                    <div className="mb-4">
-                      <p className="text-sm font-bold text-slate-200 mb-2 flex items-center">
-                        <ArrowsRightLeftIcon className="h-4 w-4 mr-2" />
-                        Switch Account ({availableUsers.length} available)
-                      </p>
-                      <div className="space-y-1 max-h-48 overflow-y-auto">
-                        {availableUsers.map((user) => (
-                          <Menu.Item key={user.address}>
-                            {({ active }) => (
-                              <button
-                                onClick={() => handleUserSwitch(user.address)}
-                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-3 ${
-                                  active ? 'bg-secondary-500/20 text-secondary-300' : 'text-slate-300 hover:bg-dark-50/30'
-                                } ${account.currentUser && account.currentUser.address === user.address ? 'bg-primary-500/20 text-primary-300' : ''}`}
-                              >
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                                  user.role === 'lender' ? 'bg-success-500' : 'bg-secondary-500'
-                                }`}>
-                                  {user.name.charAt(0)}
-                                </div>
-                                <div className="flex-1">
-                                  <p className="font-medium">{user.name}</p>
-                                  <p className="text-xs opacity-70 flex items-center space-x-2">
-                                    <span className="capitalize">{user.role}</span>
-                                    <span>•</span>
-                                    <span>${user.balance?.toLocaleString() || '0'} RLUSD</span>
-                                  </p>
-                                </div>
-                                {account.currentUser && account.currentUser.address === user.address && (
-                                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></div>
-                                )}
-                              </button>
-                            )}
-                          </Menu.Item>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Menu Actions */}
-                    <div className="border-t border-slate-400/20 pt-4 space-y-1">
-                      <Menu.Item>
-                        {({ active }) => (
+                      <div className="p-2">
+                        <button
+                          onClick={() => setShowAccountSelector(true)}
+                          className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-slate-300 hover:bg-dark-700 rounded-md transition-colors"
+                        >
+                          <UserGroupIcon className="h-4 w-4" />
+                          <span>Switch Account</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-slate-300 hover:bg-dark-700 rounded-md transition-colors"
+                        >
+                          <Cog6ToothIcon className="h-4 w-4" />
+                          <span>Settings</span>
+                        </button>
+                        
+                        <div className="border-t border-slate-700 mt-2 pt-2">
                           <button
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-3 ${
-                              active ? 'bg-slate-400/10 text-slate-200' : 'text-slate-300'
-                            }`}
-                          >
-                            <CogIcon className="h-4 w-4" />
-                            <span>Settings</span>
-                          </button>
-                        )}
-                      </Menu.Item>
-                      
-                      <Menu.Item>
-                        {({ active }) => (
-                          <button
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-3 ${
-                              active ? 'bg-slate-400/10 text-slate-200' : 'text-slate-300'
-                            }`}
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                            <span>Privacy Settings</span>
-                          </button>
-                        )}
-                      </Menu.Item>
-
-                      <Menu.Item>
-                        {({ active }) => (
-                          <button
-                            onClick={logout}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-3 ${
-                              active ? 'bg-error-500/20 text-error-300' : 'text-slate-300 hover:text-error-400'
-                            }`}
+                            onClick={handleLogout}
+                            className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
                           >
                             <ArrowRightOnRectangleIcon className="h-4 w-4" />
                             <span>Sign Out</span>
                           </button>
-                        )}
-                      </Menu.Item>
-                    </div>
-                  </div>
-                </Menu.Items>
-              </Transition>
-            </Menu>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* Loading Bar */}
-      {account.loading && (
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: '100%' }}
-          className="h-1 bg-gradient-to-r from-secondary-500 to-primary-500"
-        />
-      )}
-    </nav>
+      {/* Account Selector Modal */}
+      <AnimatePresence>
+        {showAccountSelector && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAccountSelector(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-dark-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
+            >
+              <div className="p-6 border-b border-slate-700">
+                <h3 className="text-xl font-bold text-white mb-2">Select Test Account</h3>
+                <p className="text-sm text-slate-400">
+                  Choose from pre-configured demo accounts to explore different user roles
+                </p>
+              </div>
+
+              <div className="p-4 max-h-96 overflow-y-auto">
+                <div className="space-y-3">
+                  {availableUsers.map((user) => (
+                    <motion.button
+                      key={user.address}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleUserSwitch(user.address)}
+                      disabled={loading || user.address === account.currentUser?.address}
+                      className={`w-full p-4 rounded-lg border transition-all text-left ${
+                        user.address === account.currentUser?.address
+                          ? 'border-primary-500 bg-primary-500/10'
+                          : 'border-slate-600 hover:border-slate-500 bg-dark-700/50 hover:bg-dark-700'
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
+                          user.role === 'lender' ? 'from-success-500 to-success-600' : 'from-secondary-500 to-secondary-600'
+                        } flex items-center justify-center`}>
+                          <span className="text-sm font-bold text-white">
+                            {user.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <p className="font-medium text-white">{user.name}</p>
+                            {user.address === account.currentUser?.address && (
+                              <span className="px-2 py-1 bg-primary-500 text-white text-xs rounded-full">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            {getRoleIcon(user.role)}
+                            <span className={`text-sm ${getRoleColor(user.role)}`}>
+                              {user.role}
+                            </span>
+                            <span className="text-xs text-slate-500">•</span>
+                            <span className="text-xs text-slate-500">
+                              ${user.balance?.toLocaleString() || '0'} RLUSD
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1 font-mono">
+                            {user.address.slice(0, 8)}...{user.address.slice(-6)}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-slate-700 bg-dark-900/50">
+                <button
+                  onClick={() => setShowAccountSelector(false)}
+                  className="w-full px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 } 

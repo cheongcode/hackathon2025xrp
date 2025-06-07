@@ -28,6 +28,7 @@ export interface AccountState {
     totalLoans: number;
     totalUsers: number;
   };
+  databaseInitialized: boolean;
 }
 
 export interface AccountContextType {
@@ -42,6 +43,7 @@ export interface AccountContextType {
   getAllUsers: () => Promise<DatabaseUser[]>;
   createLoan: (loanData: any) => Promise<void>;
   fundLoan: (loanId: string, lenderAddress: string, amount: number) => Promise<void>;
+  initializeDatabase: () => Promise<void>;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -63,6 +65,7 @@ const initialState: AccountState = {
     totalLoans: 0,
     totalUsers: 0,
   },
+  databaseInitialized: false,
 };
 
 export function AccountProvider({ children }: { children: ReactNode }) {
@@ -75,20 +78,56 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   // Load user data when current user changes
   useEffect(() => {
-    if (account.currentUser) {
+    if (account.currentUser && account.databaseInitialized) {
       loadUserData();
     }
-  }, [account.currentUser]);
+  }, [account.currentUser, account.databaseInitialized]);
+
+  const initializeDatabase = async () => {
+    try {
+      console.log('🔄 Initializing database...');
+      setAccount(prev => ({ ...prev, loading: true, error: null }));
+      
+      // Initialize and seed the database
+      await seedDatabase();
+      
+      // Load marketplace stats
+      const stats = await database.getMarketplaceStats();
+      
+      setAccount(prev => ({
+        ...prev,
+        databaseInitialized: true,
+        marketplaceStats: stats,
+      }));
+      
+      console.log('✅ Database initialized successfully');
+      
+    } catch (error) {
+      console.error('❌ Failed to initialize database:', error);
+      setAccount(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Failed to initialize database. Please refresh the page.',
+      }));
+    }
+  };
 
   const initializeAccount = async () => {
     try {
       setAccount(prev => ({ ...prev, loading: true, error: null }));
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // First initialize the database
+      await initializeDatabase();
       
-      // For demo, automatically select first user
-      const defaultUser = MOCK_USERS[0];
+      // Get all users from database
+      const users = await database.getAllUsers();
+      
+      if (users.length === 0) {
+        throw new Error('No users found in database');
+      }
+      
+      // For demo, automatically select first borrower
+      const defaultUser = users.find(user => user.role === 'borrower') || users[0];
       
       setAccount(prev => ({
         ...prev,
@@ -100,6 +139,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       }));
       
     } catch (error) {
+      console.error('Failed to initialize account:', error);
       setAccount(prev => ({
         ...prev,
         loading: false,
@@ -109,26 +149,11 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   };
 
   const loadUserData = async () => {
-    if (!account.currentUser) return;
+    if (!account.currentUser || !account.databaseInitialized) return;
 
     try {
-      // Load reputation data
-      const reputationData = MOCK_REPUTATION_SCORES.find(
-        rep => rep.did === account.currentUser?.did
-      ) || getReputationScore(account.currentUser.address);
-
-      // Generate DID if not exists
-      if (!account.currentUser.did) {
-        const mockDID = generateMockDID(account.currentUser.address);
-        account.currentUser.did = mockDID.id;
-      }
-
-      // Generate pseudonymous ID if not exists
-      if (!account.currentUser.pseudonymousId) {
-        account.currentUser.pseudonymousId = generatePseudonymousId(
-          account.currentUser.did || account.currentUser.address
-        );
-      }
+      // Load reputation data from database
+      const reputationData = await database.getReputation(account.currentUser.did || '');
 
       setAccount(prev => ({
         ...prev,
@@ -150,7 +175,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     try {
       setAccount(prev => ({ ...prev, loading: true, error: null }));
       
-      const newUser = MOCK_USERS.find(user => user.address === userId);
+      const newUser = await database.getUser(userId);
       if (!newUser) {
         throw new Error('User not found');
       }
@@ -198,6 +223,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     setAccount({
       ...initialState,
       loading: false,
+      databaseInitialized: account.databaseInitialized,
     });
   };
 
@@ -209,7 +235,15 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshAccountData = async () => {
-    await loadUserData();
+    if (account.databaseInitialized) {
+      await loadUserData();
+      // Refresh marketplace stats
+      const stats = await database.getMarketplaceStats();
+      setAccount(prev => ({
+        ...prev,
+        marketplaceStats: stats,
+      }));
+    }
   };
 
   const canAccessMode = (mode: ViewMode): boolean => {
@@ -225,20 +259,44 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const canAccessBorrower = canAccessMode('borrower');
   const canAccessLender = canAccessMode('lender');
 
-  const getAllUsers = async () => {
-    // Implementation of getAllUsers function
-    // This is a placeholder and should be replaced with the actual implementation
-    return [];
+  const getAllUsers = async (): Promise<DatabaseUser[]> => {
+    if (!account.databaseInitialized) {
+      return [];
+    }
+    return await database.getAllUsers();
   };
 
   const createLoan = async (loanData: any) => {
-    // Implementation of createLoan function
-    // This is a placeholder and should be replaced with the actual implementation
+    if (!account.databaseInitialized || !account.currentUser) {
+      throw new Error('Database not initialized or user not authenticated');
+    }
+    
+    const loan = {
+      ...loanData,
+      id: `loan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      borrowerAddress: account.currentUser.address,
+      borrowerDID: account.currentUser.did,
+      pseudonymousId: account.currentUser.pseudonymousId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      viewCount: 0,
+      interestedLenders: [],
+    };
+    
+    await database.createLoan(loan);
   };
 
   const fundLoan = async (loanId: string, lenderAddress: string, amount: number) => {
-    // Implementation of fundLoan function
-    // This is a placeholder and should be replaced with the actual implementation
+    if (!account.databaseInitialized) {
+      throw new Error('Database not initialized');
+    }
+    
+    await database.updateLoan(loanId, {
+      status: 'FUNDED',
+      lenderAddress,
+      fundedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
   };
 
   const contextValue: AccountContextType = {
@@ -253,6 +311,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     getAllUsers,
     createLoan,
     fundLoan,
+    initializeDatabase,
   };
 
   return (
