@@ -170,6 +170,17 @@ export default function Home() {
     }
   }, [account.databaseInitialized, account.loading]);
 
+  // Ensure loading state is properly managed
+  useEffect(() => {
+    if (account.databaseInitialized && account.currentUser && !account.loading) {
+      // Give a small delay to ensure everything is properly loaded
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [account.databaseInitialized, account.currentUser, account.loading]);
+
   const loadMarketplaceData = async () => {
     if (!account.databaseInitialized) {
       console.log('⏳ Database not ready yet, skipping marketplace data load');
@@ -177,8 +188,6 @@ export default function Home() {
     }
 
     try {
-      setIsLoading(true);
-      
       const stats = await database.getMarketplaceStats();
       setPlatformStats(stats);
       
@@ -209,13 +218,11 @@ export default function Home() {
         totalUsers: 0,
       });
       setRecentActivity([]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // Enhanced loading screen with premium animations
-  if (account.loading || isLoading) {
+  if (account.loading || (isLoading && !account.currentUser)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950 relative overflow-hidden">
         {/* Background particles with fixed positions */}

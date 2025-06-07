@@ -127,8 +127,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         throw new Error('No users found in database');
       }
       
-      // For demo, automatically select first borrower
-      const defaultUser = users.find(user => user.role === 'borrower') || users[0];
+      // For demo, automatically select Maria Santos as default borrower
+      const mariaUser = users.find(user => user.name === 'Maria Santos' && user.role === 'borrower');
+      const defaultUser = mariaUser || users.find(user => user.role === 'borrower') || users[0];
       
       setAccount(prev => ({
         ...prev,
