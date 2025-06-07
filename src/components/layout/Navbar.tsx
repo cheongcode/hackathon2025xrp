@@ -12,7 +12,8 @@ import {
   EyeIcon,
   Cog6ToothIcon,
   BanknotesIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { DatabaseUser } from '@/lib/database/db';
 
@@ -312,47 +313,50 @@ export default function Navbar() {
                       disabled={loading || user.address === account.currentUser?.address}
                       className={`w-full p-4 rounded-lg border transition-all text-left group ${
                         user.address === account.currentUser?.address
-                          ? 'border-primary-500/50 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 shadow-lg'
+                          ? 'border-primary-500/50 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 shadow-lg ring-2 ring-primary-400/30'
                           : 'border-slate-600/50 hover:border-primary-400/50 bg-dark-700/30 hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-secondary-500/5'
                       } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                          user.role === 'lender' 
-                            ? 'bg-gradient-to-br from-success-500 to-success-600' 
-                            : 'bg-gradient-to-br from-secondary-500 to-secondary-600'
-                        } ${user.address === account.currentUser?.address ? 'ring-2 ring-primary-400/50' : ''}`}>
-                          <span className="text-sm font-bold text-white">
+                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${
+                          user.role === 'lender' ? 'from-success-500 to-accent-500' : 'from-primary-500 to-secondary-500'
+                        } flex items-center justify-center ring-2 ring-offset-2 ring-offset-dark-800 ${
+                          user.address === account.currentUser?.address ? 'ring-primary-400/50' : 'ring-transparent'
+                        }`}>
+                          <span className="text-lg font-bold text-white">
                             {user.name.charAt(0)}
                           </span>
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2">
-                            <p className="font-medium text-white group-hover:text-slate-100 transition-colors">
-                              {user.name}
-                            </p>
+                            <p className="font-semibold text-white truncate">{user.name}</p>
                             {user.address === account.currentUser?.address && (
-                              <span className="px-2 py-1 bg-gradient-to-r from-primary-500 to-secondary-500 text-white text-xs rounded-full font-medium">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-300 border border-primary-400/30">
                                 Current
                               </span>
                             )}
                           </div>
                           <div className="flex items-center space-x-2 mt-1">
-                            <div className={getRoleColor(user.role)}>
-                              {getRoleIcon(user.role)}
-                            </div>
+                            {getRoleIcon(user.role)}
                             <span className={`text-sm font-medium ${getRoleColor(user.role)}`}>
-                              {user.role}
+                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                             </span>
-                            <span className="text-xs text-slate-500">•</span>
-                            <span className="text-xs text-slate-400 font-medium">
-                              ${user.balance?.toLocaleString() || '0'} RLUSD
+                            <span className="text-slate-500">•</span>
+                            <span className="text-slate-400 text-sm">
+                              ${(user.balance || 0).toLocaleString()} RLUSD
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 mt-1 font-mono opacity-70">
-                            {user.address.slice(0, 8)}...{user.address.slice(-6)}
-                          </p>
+                          <div className="mt-1">
+                            <p className="text-xs text-slate-500 font-mono truncate">
+                              {user.pseudonymousId || user.address.slice(0, 12) + '...'}
+                            </p>
+                          </div>
                         </div>
+                        {loading && user.address === account.currentUser?.address ? (
+                          <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <ChevronRightIcon className="h-5 w-5 text-slate-500 group-hover:text-primary-400 transition-colors" />
+                        )}
                       </div>
                     </motion.button>
                   ))}

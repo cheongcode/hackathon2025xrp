@@ -24,6 +24,7 @@ import { useAccount } from '@/lib/contexts/AccountContext';
 import { LoanRequest, LoanStatus, MOCK_REPUTATION_SCORES } from '@/types';
 import { createLoanEscrow, getAvailableLoanRequests, getUserEscrows, getTestnetExplorerLink } from '@/lib/xrpl/escrow';
 import { Wallet } from 'xrpl';
+import { TEST_ACCOUNTS } from '@/lib/database/seed-data';
 
 // Filter and sort options
 interface FilterOptions {
@@ -122,10 +123,10 @@ const mockAvailableLoans: LoanRequest[] = [
 ];
 
 export default function EnhancedLenderView() {
-  const { account, updateUserBalance } = useAccount();
+  const { account, updateUserBalance, fundLoan } = useAccount();
   
   // State management
-  const [availableLoans, setAvailableLoans] = useState<LoanRequest[]>(mockAvailableLoans);
+  const [availableLoans, setAvailableLoans] = useState<LoanRequest[]>([]);
   const [fundedLoans, setFundedLoans] = useState<LoanRequest[]>([]);
   const [filters, setFilters] = useState<FilterOptions>(initialFilters);
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,55 +134,41 @@ export default function EnhancedLenderView() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedLoan, setSelectedLoan] = useState<LoanRequest | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load mock funded loans
+  // Load real loans from database
   useEffect(() => {
-    if (account.currentUser) {
-      const mockFundedLoans: LoanRequest[] = [
-        {
-          id: 'loan-funded-001',
-          borrowerAddress: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
-          borrowerDID: 'did:xrpl:Hb9CJAWy:1704157200000',
-          pseudonymousId: 'USER-HB9C1234',
-          amount: 1000,
-          currency: 'RLUSD',
-          purpose: 'Medical emergency',
-          tags: ['#healthcare', '#emergency'],
-          status: 'FUNDED' as LoanStatus,
-          createdAt: Date.now() - 86400000 * 10,
-          fundedAt: Date.now() - 86400000 * 9,
-          lenderAddress: account.currentUser.address,
-          escrowId: 'escrow-mock-1234567890',
-          txHash: 'TX1234567890ABCDEF1234567890ABCDEF12345678',
-          interestRate: 8.5,
-          repaymentPeriod: 21,
-          riskScore: 72,
-        },
-        {
-          id: 'loan-funded-002',
-          borrowerAddress: 'rF8h3K2mN9pQsE7Lj6vRxC4wY1zB5tG3Mp',
-          borrowerDID: 'did:xrpl:F8h3K2mN:1704157200000',
-          pseudonymousId: 'USER-F8H3234D',
-          amount: 2500,
-          currency: 'RLUSD',
-          purpose: 'Education loan',
-          tags: ['#education'],
-          status: 'REPAID' as LoanStatus,
-          createdAt: Date.now() - 86400000 * 45,
-          fundedAt: Date.now() - 86400000 * 44,
-          repaidAt: Date.now() - 86400000 * 14,
-          lenderAddress: account.currentUser.address,
-          escrowId: 'escrow-mock-0987654321',
-          txHash: 'TX0987654321FEDCBA0987654321FEDCBA87654321',
-          repaymentTxHash: 'REPAY123456789ABCDEF123456789ABCDEF123456',
-          interestRate: 7.2,
-          repaymentPeriod: 30,
-          riskScore: 89,
-        },
-      ];
-      setFundedLoans(mockFundedLoans);
+    if (account.databaseInitialized) {
+      loadMarketplaceLoans();
     }
-  }, [account.currentUser]);
+  }, [account.databaseInitialized, account.currentUser]);
+
+  const loadMarketplaceLoans = async () => {
+    if (!account.databaseInitialized) return;
+    
+    try {
+      setIsLoading(true);
+      const { database } = await import('@/lib/database/db');
+      
+      const allLoans = await database.getAllLoans();
+      
+      const pendingLoans = allLoans.filter(loan => loan.status === 'PENDING');
+      const userFundedLoans = allLoans.filter(loan => 
+        loan.lenderAddress === account.currentUser?.address &&
+        (loan.status === 'FUNDED' || loan.status === 'REPAID')
+      );
+      
+      setAvailableLoans(pendingLoans);
+      setFundedLoans(userFundedLoans);
+      
+    } catch (error) {
+      console.error('Failed to load marketplace loans:', error);
+      setAvailableLoans([]);
+      setFundedLoans([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Memoized filtered and sorted loans for performance
   const filteredLoans = useMemo(() => {
@@ -274,52 +261,17 @@ export default function EnhancedLenderView() {
     setFundingLoans(prev => new Set(prev).add(request.id));
 
     try {
-      const lenderWallet = new Wallet(account.currentUser.address, 'mock-secret');
+      // Update in database via context
+      await fundLoan(request.id, account.currentUser.address, request.amount);
       
-      const loanMetadata = {
-        purpose: request.purpose,
-        borrowerDID: request.borrowerDID || 'unknown',
-        pseudonymousId: request.pseudonymousId || 'unknown',
-        tags: request.tags || [],
-        requestedAmount: request.amount,
-        currency: request.currency,
-        repaymentPeriod: request.repaymentPeriod || 30,
-        interestRate: request.interestRate || 8.0,
-        riskScore: request.riskScore || 50,
-        createdAt: request.createdAt,
-      };
-
-      const result = await createLoanEscrow(
-        lenderWallet,
-        request.borrowerAddress,
-        request.amount,
-        loanMetadata,
-        request.repaymentPeriod || 30
-      );
-
-      if (result.success) {
-        const fundedRequest: LoanRequest = {
-          ...request,
-          status: 'FUNDED' as LoanStatus,
-          fundedAt: Date.now(),
-          lenderAddress: account.currentUser.address,
-          escrowId: result.escrowId,
-          txHash: result.txHash,
-        };
-
-        // Update state
-        setAvailableLoans(prev => prev.filter(loan => loan.id !== request.id));
-        setFundedLoans(prev => [fundedRequest, ...prev]);
-        
-        // Update user balance
-        updateUserBalance(-request.amount);
-        
-        setSuccessMessage(`Successfully funded $${request.amount.toLocaleString()} RLUSD loan!`);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 4000);
-      } else {
-        console.error('Failed to fund loan:', result.error);
-      }
+      // Refresh loans from database
+      await loadMarketplaceLoans();
+      
+      updateUserBalance(-request.amount);
+      
+      setSuccessMessage(`Successfully funded $${request.amount.toLocaleString()} RLUSD loan!`);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 4000);
 
     } catch (error) {
       console.error('Error funding loan:', error);
@@ -330,6 +282,11 @@ export default function EnhancedLenderView() {
         return newSet;
       });
     }
+  };
+
+  // Get borrower profile from test users
+  const getBorrowerProfile = (borrowerAddress: string) => {
+    return TEST_ACCOUNTS.find((user: any) => user.address === borrowerAddress);
   };
 
   const getBorrowerReputation = useCallback((borrowerDID: string) => {
@@ -526,17 +483,36 @@ export default function EnhancedLenderView() {
         transition={{ delay: 0.2 }}
         className="glass-card"
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
-            <EyeIcon className="h-8 w-8 text-secondary-400 mr-3" />
-            <h2 className="text-2xl font-bold gradient-text">Loan Marketplace</h2>
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            >
+              <EyeIcon className="h-8 w-8 text-secondary-400 mr-3" />
+            </motion.div>
+            <div>
+              <h2 className="text-3xl font-bold gradient-text">Loan Marketplace</h2>
+              <p className="text-slate-400 mt-1">Discover vetted loan opportunities</p>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-slate-400">
-            <span>{filteredLoans.length} opportunities</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 px-4 py-2 bg-success-500/10 border border-success-400/30 rounded-lg">
+              <div className="w-2 h-2 bg-success-400 rounded-full animate-pulse"></div>
+              <span className="text-success-300 text-sm font-medium">{filteredLoans.length} opportunities</span>
+            </div>
+            <motion.button
+              onClick={loadMarketplaceLoans}
+              className="px-4 py-2 bg-primary-600/20 border border-primary-400/30 rounded-lg text-primary-300 hover:bg-primary-600/30 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              🔄 Refresh
+            </motion.button>
           </div>
         </div>
 
-        {/* Search and Filters */}
+        {/* Enhanced Search and Filters */}
         <div className="mb-6 space-y-4">
           {/* Search Bar */}
           <div className="relative">
@@ -609,164 +585,255 @@ export default function EnhancedLenderView() {
           </div>
         </div>
         
-        {/* Loan Opportunities */}
-        <div className="space-y-4">
-          <AnimatePresence>
-            {filteredLoans.map((request, index) => {
-              const reputation = getBorrowerReputation(request.borrowerDID || '');
-              const expectedReturn = request.amount * (1 + (request.interestRate || 8) / 100);
-              
-              return (
-                <motion.div
-                  key={request.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="glass-effect border border-slate-400/20 rounded-xl p-6 hover:border-secondary-400/30 transition-all duration-300"
-                >
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    {/* Loan Details */}
-                    <div className="lg:col-span-2">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h4 className="text-xl font-bold text-slate-100 mb-2">{request.purpose}</h4>
-                          <div className="flex items-center space-x-3 mb-3">
-                            <UserIcon className="h-4 w-4 text-slate-400" />
-                            <span className="font-mono text-sm text-slate-300">
-                              {request.pseudonymousId}
-                            </span>
-                            {reputation && (
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                reputation.trustScore >= 80 
-                                  ? 'bg-success-500/20 text-success-400'
-                                  : reputation.trustScore >= 60
-                                  ? 'bg-warning-500/20 text-warning-400'
-                                  : 'bg-error-500/20 text-error-400'
-                              }`}>
-                                Trust: {reputation.trustScore}/100
-                              </span>
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-8 h-8 border-2 border-secondary-500 border-t-transparent rounded-full"
+            />
+            <span className="ml-3 text-slate-400">Loading marketplace opportunities...</span>
+          </div>
+        ) : (
+          <>
+            {/* Enhanced Loan Opportunities */}
+            <div className="space-y-6">
+              <AnimatePresence>
+                {filteredLoans.map((request, index) => {
+                  const borrowerProfile = getBorrowerProfile(request.borrowerAddress);
+                  const reputation = getBorrowerReputation(request.borrowerDID || '');
+                  const expectedReturn = request.amount * (1 + (request.interestRate || 8) / 100);
+                  const profit = expectedReturn - request.amount;
+                  
+                  return (
+                    <motion.div
+                      key={request.id}
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                      transition={{ duration: 0.4, delay: index * 0.05 }}
+                      whileHover={{ scale: 1.01, y: -2 }}
+                      className="bg-gradient-to-br from-dark-800/80 to-dark-900/80 border border-slate-600/30 rounded-2xl p-6 hover:border-secondary-400/50 transition-all duration-300 shadow-lg hover:shadow-secondary-500/20 backdrop-blur-sm"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        {/* Loan Details - Main Section */}
+                        <div className="lg:col-span-5">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="text-xl font-bold text-white mb-2 line-clamp-2">
+                                {request.purpose}
+                              </h4>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {request.tags?.map((tag, i) => (
+                                  <motion.span
+                                    key={i}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.1 + i * 0.05 }}
+                                    className="px-3 py-1 bg-secondary-500/20 text-secondary-300 rounded-full text-xs font-medium border border-secondary-400/30"
+                                  >
+                                    {tag}
+                                  </motion.span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-3xl font-bold text-success-400">
+                                ${request.amount.toLocaleString()}
+                              </p>
+                              <p className="text-sm text-slate-400">RLUSD</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400 text-sm">Interest Rate</span>
+                                <span className="text-accent-400 font-bold text-lg">{request.interestRate?.toFixed(1)}%</span>
+                              </div>
+                            </div>
+                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400 text-sm">Period</span>
+                                <span className="text-white font-bold text-lg">{request.repaymentPeriod}d</span>
+                              </div>
+                            </div>
+                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400 text-sm">Risk Score</span>
+                                <span className={`font-bold text-lg ${getRiskColor(request.riskScore || 50)}`}>
+                                  {request.riskScore}/100
+                                </span>
+                              </div>
+                            </div>
+                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400 text-sm">Created</span>
+                                <span className="text-white font-medium text-sm">
+                                  {new Date(request.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Borrower Profile */}
+                        <div className="lg:col-span-4">
+                          <div className="bg-gradient-to-br from-primary-500/10 to-secondary-500/10 border border-primary-400/30 rounded-xl p-4 h-full">
+                            <h5 className="text-lg font-bold text-white mb-4 flex items-center">
+                              <UserIcon className="h-5 w-5 mr-2 text-primary-400" />
+                              Borrower Profile
+                            </h5>
+                            
+                            {borrowerProfile && (
+                              <div className="space-y-3">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-bold text-lg">
+                                      {borrowerProfile.name.charAt(0)}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="text-white font-semibold">{borrowerProfile.name}</p>
+                                    <p className="text-slate-400 text-sm font-mono">
+                                      {request.pseudonymousId || borrowerProfile.pseudonymousId}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {reputation ? (
+                                  <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+                                    <div>
+                                      <span className="text-slate-400">Trust Score:</span>
+                                      <div className="flex items-center space-x-2 mt-1">
+                                        <div className="flex-1 bg-dark-700 rounded-full h-2">
+                                          <motion.div 
+                                            className="bg-gradient-to-r from-success-500 to-accent-400 h-2 rounded-full"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${reputation.trustScore}%` }}
+                                            transition={{ duration: 1, delay: 0.2 }}
+                                          />
+                                        </div>
+                                        <span className="text-success-400 font-bold">{reputation.trustScore}/100</span>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400">Total Loans:</span>
+                                      <p className="text-white font-semibold mt-1">{reputation.totalLoans}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400">Success Rate:</span>
+                                      <p className="text-success-400 font-semibold mt-1">
+                                        {reputation.totalLoans > 0 ? `${Math.round((reputation.successfulRepayments / reputation.totalLoans) * 100)}%` : 'N/A'}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400">Verification:</span>
+                                      <div className="flex items-center space-x-1 mt-1">
+                                        <ShieldCheckIcon className="h-4 w-4 text-accent-400" />
+                                        <span className="text-accent-400 font-medium text-xs">
+                                          {reputation.verificationLevel || 'Basic'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-slate-400 text-sm mt-3">No reputation data available.</div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {!borrowerProfile && (
+                              <div className="text-center text-slate-400 py-4">
+                                <UserIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Borrower profile loading...</p>
+                                <p className="text-xs font-mono mt-1">
+                                  {request.pseudonymousId || 'Anonymous'}
+                                </p>
+                              </div>
                             )}
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {request.tags?.map((tag, i) => (
-                              <span key={i} className="text-xs bg-secondary-500/20 text-secondary-300 px-3 py-1 rounded-full">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-3xl font-bold text-success-400">${request.amount.toLocaleString()}</p>
-                          <p className="text-slate-400 text-sm">RLUSD</p>
+
+                        {/* Action Area */}
+                        <div className="lg:col-span-3 flex flex-col justify-center">
+                          <div className="bg-gradient-to-br from-success-500/10 to-accent-500/10 border border-success-400/30 rounded-xl p-4 text-center mb-4">
+                            <p className="text-success-300 text-sm mb-2">Expected Return</p>
+                            <p className="text-3xl font-bold text-success-400 mb-1">
+                              ${expectedReturn.toLocaleString()}
+                            </p>
+                            <p className="text-success-300 text-sm">
+                              Profit: +${profit.toLocaleString()}
+                            </p>
+                            <div className="mt-2 text-xs text-slate-400">
+                              ROI: {((profit / request.amount) * 100).toFixed(1)}%
+                            </div>
+                          </div>
+                          
+                          <motion.button
+                            onClick={() => handleFundLoan(request)}
+                            disabled={fundingLoans.has(request.id) || account.availableBalance < request.amount}
+                            className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center space-x-3 transition-all duration-200 ${
+                              fundingLoans.has(request.id) || account.availableBalance < request.amount
+                                ? 'bg-slate-600 cursor-not-allowed opacity-50' 
+                                : 'bg-gradient-to-r from-accent-600 to-accent-500 hover:from-accent-500 hover:to-accent-400 shadow-lg hover:shadow-accent-500/40'
+                            }`}
+                            whileHover={!fundingLoans.has(request.id) && account.availableBalance >= request.amount ? { scale: 1.02, y: -1 } : {}}
+                            whileTap={!fundingLoans.has(request.id) && account.availableBalance >= request.amount ? { scale: 0.98 } : {}}
+                          >
+                            {fundingLoans.has(request.id) ? (
+                              <>
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                                />
+                                <span>Funding Loan...</span>
+                              </>
+                            ) : account.availableBalance < request.amount ? (
+                              <>
+                                <XCircleIcon className="h-5 w-5" />
+                                <span>Insufficient Balance</span>
+                              </>
+                            ) : (
+                              <>
+                                <BanknotesIcon className="h-5 w-5" />
+                                <span>Fund This Loan</span>
+                              </>
+                            )}
+                          </motion.button>
                         </div>
                       </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
 
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-slate-400">Interest Rate:</span>
-                          <span className="text-secondary-400 font-bold ml-2">{request.interestRate}%</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Period:</span>
-                          <span className="text-slate-200 font-bold ml-2">{request.repaymentPeriod}d</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Risk Score:</span>
-                          <span className={`${getRiskColor(request.riskScore || 50)} font-bold ml-2`}>
-                            {request.riskScore}/100 ({getRiskLabel(request.riskScore || 50)})
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Created:</span>
-                          <span className="text-slate-200 font-bold ml-2">
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Borrower Info */}
-                    {reputation && (
-                      <div className="bg-dark-50/30 rounded-lg p-4">
-                        <h5 className="text-sm font-bold text-slate-200 mb-3">Borrower Profile</h5>
-                        <div className="space-y-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Total Loans:</span>
-                            <span className="text-slate-200 font-medium">{reputation.totalLoans}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Success Rate:</span>
-                            <span className="text-success-400 font-medium">
-                              {Math.round((reputation.successfulRepayments / reputation.totalLoans) * 100)}%
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Avg Repayment:</span>
-                            <span className="text-slate-200 font-medium">{reputation.averageRepaymentTime}d</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-slate-400">Verification:</span>
-                            <span className="text-secondary-400 font-medium capitalize">{reputation.verificationLevel}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action Area */}
-                    <div className="flex flex-col justify-center">
-                      <div className="mb-4 text-center">
-                        <p className="text-sm text-slate-400 mb-1">Expected Return</p>
-                        <p className="text-2xl font-bold text-success-400">
-                          ${expectedReturn.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          Profit: ${(expectedReturn - request.amount).toLocaleString()}
-                        </p>
-                      </div>
-                      
-                      <motion.button
-                        onClick={() => handleFundLoan(request)}
-                        disabled={fundingLoans.has(request.id) || account.availableBalance < request.amount}
-                        className={`btn-accent w-full flex items-center justify-center space-x-2 ${
-                          fundingLoans.has(request.id) || account.availableBalance < request.amount
-                            ? 'opacity-50 cursor-not-allowed' 
-                            : ''
-                        }`}
-                        whileHover={!fundingLoans.has(request.id) && account.availableBalance >= request.amount ? { scale: 1.02 } : {}}
-                        whileTap={!fundingLoans.has(request.id) && account.availableBalance >= request.amount ? { scale: 0.98 } : {}}
-                      >
-                        {fundingLoans.has(request.id) ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Funding...</span>
-                          </>
-                        ) : account.availableBalance < request.amount ? (
-                          <>
-                            <XCircleIcon className="h-5 w-5" />
-                            <span>Insufficient Balance</span>
-                          </>
-                        ) : (
-                          <>
-                            <BanknotesIcon className="h-5 w-5" />
-                            <span>Fund Loan</span>
-                          </>
-                        )}
-                      </motion.button>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-
-        {filteredLoans.length === 0 && (
-          <div className="text-center py-12">
-            <EyeIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-400 text-lg">No loans match your criteria</p>
-            <p className="text-slate-500">Try adjusting your filters to see more opportunities</p>
-          </div>
+            {filteredLoans.length === 0 && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center py-16"
+              >
+                <EyeIcon className="h-16 w-16 text-slate-400 mx-auto mb-4 opacity-50" />
+                <h3 className="text-xl font-bold text-slate-300 mb-2">No loans match your criteria</h3>
+                <p className="text-slate-400 mb-6">Try adjusting your filters to see more opportunities</p>
+                <motion.button
+                  onClick={() => {
+                    setFilters(initialFilters);
+                    setSearchTerm('');
+                  }}
+                  className="px-6 py-3 bg-primary-600/20 border border-primary-400/30 rounded-lg text-primary-300 hover:bg-primary-600/30 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Clear Filters
+                </motion.button>
+              </motion.div>
+            )}
+          </>
         )}
       </motion.div>
 

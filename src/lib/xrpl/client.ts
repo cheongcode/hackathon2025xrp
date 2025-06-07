@@ -179,7 +179,7 @@ export const getAccountBalance = async (address: string): Promise<{ xrp: number;
     });
     
     const balanceString = accountInfo.result.account_data.Balance?.toString() || '0';
-    const xrpBalance = parseFloat(dropsToXrp(balanceString));
+    const xrpBalance = Number(dropsToXrp(balanceString));
     
     // Get RLUSD balance from trust lines
     const accountLines = await client.request({
@@ -341,7 +341,9 @@ export const sendRealXRPPayment = async (
   memo?: string
 ): Promise<{ success: boolean; txHash?: string; error?: string; ledgerIndex?: number }> => {
   try {
-    // Input validation
+    console.log('🚀 Starting XRP payment...', { fromSeed: fromSeed.slice(0, 10) + '...', toAddress, amountXRP });
+    
+    // Validate inputs first
     if (!fromSeed || !toAddress || !amountXRP) {
       return {
         success: false,
@@ -349,11 +351,20 @@ export const sendRealXRPPayment = async (
       };
     }
 
-    // Validate XRP address format
-    if (!isValidXRPAddress(toAddress)) {
+    // Clean and validate the destination address
+    const cleanToAddress = toAddress.trim();
+    if (!cleanToAddress) {
       return {
         success: false,
-        error: 'Invalid destination address format'
+        error: 'Destination address cannot be empty'
+      };
+    }
+
+    // Validate XRP address format
+    if (!isValidXRPAddress(cleanToAddress)) {
+      return {
+        success: false,
+        error: `Invalid destination address format: ${cleanToAddress}`
       };
     }
 
@@ -374,12 +385,21 @@ export const sendRealXRPPayment = async (
     }
 
     const client = await getXRPLClient();
-    const senderWallet = Wallet.fromSeed(fromSeed);
+    let senderWallet: Wallet;
     
-    console.log(`💸 Sending ${amountXRP} XRP from ${senderWallet.address} to ${toAddress}`);
+    try {
+      senderWallet = Wallet.fromSeed(fromSeed);
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Invalid sender wallet seed'
+      };
+    }
+    
+    console.log(`💸 Sending ${amountXRP} XRP from ${senderWallet.address} to ${cleanToAddress}`);
     
     // Check if sender and receiver are different
-    if (senderWallet.address === toAddress) {
+    if (senderWallet.address === cleanToAddress) {
       return {
         success: false,
         error: 'Cannot send to the same address'
@@ -396,12 +416,12 @@ export const sendRealXRPPayment = async (
       };
     }
     
-    // Prepare payment transaction with proper validation
+    // Prepare payment transaction with strict validation
     const payment: Payment = {
       TransactionType: 'Payment',
       Account: senderWallet.address,
-      Destination: toAddress.trim(), // Ensure no whitespace
-      Amount: xrpToDrops(amountXRP),
+      Destination: cleanToAddress,
+      Amount: xrpToDrops(amountXRP.toString()),
     };
     
     // Add memo if provided
@@ -414,10 +434,17 @@ export const sendRealXRPPayment = async (
       }];
     }
     
+    console.log('📝 Payment object before autofill:', {
+      TransactionType: payment.TransactionType,
+      Account: payment.Account,
+      Destination: payment.Destination,
+      Amount: payment.Amount
+    });
+    
     // Auto-fill transaction details
     const prepared = await client.autofill(payment);
     console.log('📝 Prepared transaction:', {
-      fee: dropsToXrp(prepared.Fee),
+      fee: dropsToXrp(prepared.Fee || '0'),
       sequence: prepared.Sequence,
       lastLedgerSequence: prepared.LastLedgerSequence,
       account: prepared.Account,

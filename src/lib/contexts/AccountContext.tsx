@@ -173,32 +173,53 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const switchUser = async (userId: string) => {
     try {
+      console.log('🔄 Switching to user:', userId);
       setAccount(prev => ({ ...prev, loading: true, error: null }));
+      
+      // Ensure database is initialized
+      if (!account.databaseInitialized) {
+        await initializeDatabase();
+      }
       
       const newUser = await database.getUser(userId);
       if (!newUser) {
-        throw new Error('User not found');
+        throw new Error(`User with ID ${userId} not found`);
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('✅ Found user:', newUser.name, newUser.role);
+
+      // Simulate API call for realistic UX
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Load reputation data for new user
+      let userReputation = null;
+      try {
+        userReputation = await database.getReputation(newUser.did || '');
+      } catch (error) {
+        console.warn('Could not load reputation for user:', error);
+      }
 
       setAccount(prev => ({
         ...prev,
         currentUser: newUser,
+        isAuthenticated: true,
         availableBalance: newUser.balance || 10000,
         viewMode: newUser.role === 'lender' ? 'lender' : 'borrower',
         loading: false,
         userLoans: [],
-        userReputation: null,
+        userReputation,
         totalPortfolioValue: 0,
+        error: null,
       }));
 
+      console.log('✅ Successfully switched to user:', newUser.name);
+
     } catch (error) {
+      console.error('❌ Failed to switch user:', error);
       setAccount(prev => ({
         ...prev,
         loading: false,
-        error: 'Failed to switch user',
+        error: `Failed to switch user: ${error instanceof Error ? error.message : 'Unknown error'}`,
       }));
     }
   };

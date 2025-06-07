@@ -54,7 +54,7 @@ const initialFormState: LoanFormState = {
 };
 
 export default function EnhancedBorrowerView() {
-  const { account, updateUserBalance, refreshAccountData } = useAccount();
+  const { account, updateUserBalance, refreshAccountData, createLoan } = useAccount();
   
   // Optimized state management
   const [formState, setFormState] = useState<LoanFormState>(initialFormState);
@@ -185,35 +185,28 @@ export default function EnhancedBorrowerView() {
       const finalPurpose = formState.purpose === 'other' ? formState.customPurpose : formState.purpose;
       const trustScore = account.userReputation?.trustScore || 50;
       
-      const loanMetadata = {
-        purpose: finalPurpose,
-        borrowerDID: userDID,
-        pseudonymousId: pseudonymousId,
-        tags: formState.selectedTags,
-        requestedAmount: parseFloat(formState.amount),
-        currency: 'RLUSD',
-        repaymentPeriod: parseInt(formState.repaymentPeriod),
-        interestRate: calculateInterestRate(trustScore),
-        riskScore: calculateRiskScore(trustScore),
-        createdAt: Date.now(),
-      };
-
-      const requestId = createLoanRequest(loanMetadata);
-
-      const newRequest: LoanRequest = {
-        id: requestId,
-        borrowerAddress: account.currentUser.address,
-        borrowerDID: userDID,
-        pseudonymousId: pseudonymousId,
+      const loanData = {
         amount: parseFloat(formState.amount),
         currency: 'RLUSD',
         purpose: finalPurpose,
         tags: formState.selectedTags,
         status: 'PENDING' as LoanStatus,
-        createdAt: Date.now(),
-        interestRate: loanMetadata.interestRate,
+        interestRate: calculateInterestRate(trustScore),
         repaymentPeriod: parseInt(formState.repaymentPeriod),
-        riskScore: loanMetadata.riskScore,
+        riskScore: calculateRiskScore(trustScore),
+      };
+
+      // Save to database so it appears in marketplace
+      await createLoan(loanData);
+
+      // Also add to local state for immediate UI update
+      const newRequest: LoanRequest = {
+        id: `loan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        borrowerAddress: account.currentUser.address,
+        borrowerDID: userDID,
+        pseudonymousId: pseudonymousId,
+        ...loanData,
+        createdAt: Date.now(),
       };
       
       setLoanRequests(prev => [newRequest, ...prev]);
@@ -587,80 +580,145 @@ export default function EnhancedBorrowerView() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-gradient-to-br from-accent-500/10 to-warning-500/10 border border-accent-500/20 rounded-xl p-6"
+        className="bg-gradient-to-br from-accent-500/10 to-warning-500/10 border border-accent-500/30 rounded-xl p-6"
       >
-        <div className="flex items-center space-x-3 mb-4">
+        <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-gradient-to-br from-accent-500 to-warning-500 rounded-lg flex items-center justify-center">
             <BeakerIcon className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">Real Testnet Transactions</h3>
-            <p className="text-sm text-slate-400">Test actual XRPL functionality with live testnet</p>
+            <h3 className="text-xl font-semibold text-white">Real Testnet Transactions</h3>
+            <p className="text-sm text-slate-300">Test actual XRPL functionality with live testnet blockchain</p>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* XRPL Connection Status */}
-          <div className="bg-dark-800/50 rounded-lg p-4">
-            <h4 className="font-medium text-white mb-3">XRPL Connection Status</h4>
+          <div className="bg-dark-800/60 rounded-lg p-4 border border-slate-600/30">
+            <h4 className="font-medium text-white mb-3 flex items-center">
+              <div className="w-2 h-2 bg-success-400 rounded-full mr-2 animate-pulse"></div>
+              XRPL Connection Status
+            </h4>
             <button
               onClick={async () => {
                 const result = await testXRPLConnection();
-                console.log('XRPL Connection Test:', result);
+                if (result.success) {
+                  alert(`✅ XRPL Connected!\nNetwork: ${result.data?.network}\nLedger: ${result.data?.ledger_index}`);
+                } else {
+                  alert(`❌ Connection Failed: ${result.message}`);
+                }
               }}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm"
+              className="w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
               Test Connection
             </button>
           </div>
 
           {/* Create New Testnet Wallet */}
-          <div className="bg-dark-800/50 rounded-lg p-4">
+          <div className="bg-dark-800/60 rounded-lg p-4 border border-slate-600/30">
             <h4 className="font-medium text-white mb-3">Create Funded Testnet Wallet</h4>
             <button
               onClick={async () => {
                 try {
                   const result = await createTestnetFundedWallet();
+                  const message = `🎉 New Wallet Created!\n\nAddress: ${result.wallet.address}\nFunded: ${result.funded ? 'Yes' : 'No'}\nBalance: ${result.balance || 0} XRP\n\n💡 Copy this address for testing!`;
+                  alert(message);
                   console.log('New testnet wallet:', result);
-                  alert(`Created wallet: ${result.wallet.address}\nFunded: ${result.funded}\nBalance: ${result.balance || 0} XRP`);
                 } catch (error) {
                   console.error('Failed to create wallet:', error);
-                  alert('Failed to create wallet. Check console for details.');
+                  alert('❌ Failed to create wallet. Check console for details.');
                 }
               }}
-              className="px-4 py-2 bg-success-600 hover:bg-success-700 text-white rounded-lg transition-colors text-sm"
+              className="w-full px-4 py-2 bg-success-600 hover:bg-success-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
               Create & Fund Wallet
             </button>
           </div>
 
           {/* Real XRP Payment */}
-          <div className="bg-dark-800/50 rounded-lg p-4">
+          <div className="bg-dark-800/60 rounded-lg p-4 border border-slate-600/30 md:col-span-2">
             <h4 className="font-medium text-white mb-3">Send Real XRP Payment</h4>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="To Address"
-                  className="px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all"
-                  id="toAddress"
-                />
-                <input
-                  type="number"
-                  placeholder="Amount XRP"
-                  step="0.000001"
-                  min="0.000001"
-                  className="px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all"
-                  id="xrpAmount"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Destination Address</label>
+                  <input
+                    type="text"
+                    placeholder="rXXXXXXXXXX... (e.g., rDdECVmwpkRo8FtY3ywCYhHX8VfuSAqghj)"
+                    className="w-full px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all text-sm"
+                    id="toAddress"
+                  />
+                  <div className="mt-1 text-xs text-slate-500">
+                    Quick fill: 
+                    <button 
+                      onClick={() => {
+                        const input = document.getElementById('toAddress') as HTMLInputElement;
+                        if (input) input.value = DEMO_TESTNET_WALLETS.lender1.address;
+                      }}
+                      className="ml-1 text-primary-400 hover:text-primary-300 underline"
+                    >
+                      Lender1
+                    </button>
+                    ,
+                    <button 
+                      onClick={() => {
+                        const input = document.getElementById('toAddress') as HTMLInputElement;
+                        if (input) input.value = DEMO_TESTNET_WALLETS.lender2.address;
+                      }}
+                      className="ml-1 text-primary-400 hover:text-primary-300 underline"
+                    >
+                      Lender2
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Amount (XRP)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 1.5"
+                    step="0.000001"
+                    min="0.000001"
+                    max="1000"
+                    className="w-full px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all text-sm"
+                    id="xrpAmount"
+                  />
+                  <div className="mt-1 text-xs text-slate-500">
+                    Min: 0.000001 XRP, Max: 1000 XRP
+                  </div>
+                </div>
               </div>
               <button
                 onClick={async () => {
-                  const toAddress = (document.getElementById('toAddress') as HTMLInputElement)?.value;
-                  const amount = (document.getElementById('xrpAmount') as HTMLInputElement)?.value;
+                  const toAddressInput = document.getElementById('toAddress') as HTMLInputElement;
+                  const amountInput = document.getElementById('xrpAmount') as HTMLInputElement;
+                  
+                  const toAddress = toAddressInput?.value?.trim();
+                  const amount = amountInput?.value?.trim();
                   
                   if (!toAddress || !amount) {
-                    alert('Please enter both address and amount');
+                    alert('⚠️ Please enter both destination address and amount');
+                    return;
+                  }
+
+                  // Additional client-side validation
+                  if (!/^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(toAddress)) {
+                    alert('❌ Invalid XRPL address format. Address must start with "r" and be 25-34 characters long.');
+                    return;
+                  }
+
+                  const amountNumber = parseFloat(amount);
+                  if (isNaN(amountNumber) || amountNumber <= 0) {
+                    alert('❌ Invalid amount. Must be a positive number.');
+                    return;
+                  }
+
+                  if (amountNumber < 0.000001) {
+                    alert('❌ Amount too small. Minimum is 0.000001 XRP.');
+                    return;
+                  }
+
+                  if (amountNumber > 1000) {
+                    alert('❌ Amount too large. Maximum is 1000 XRP for demo.');
                     return;
                   }
 
@@ -674,17 +732,22 @@ export default function EnhancedBorrowerView() {
                     );
                     
                     if (result.success) {
-                      alert(`Payment successful!\nTx Hash: ${result.txHash}\nLedger: ${result.ledgerIndex}`);
+                      const message = `🎉 Payment Successful!\n\nTransaction Hash: ${result.txHash}\nLedger Index: ${result.ledgerIndex}\n\n🔍 View on Explorer:\nhttps://testnet.xrpl.org/transactions/${result.txHash}`;
+                      alert(message);
                       console.log('Payment result:', result);
+                      
+                      // Clear form on success
+                      toAddressInput.value = '';
+                      amountInput.value = '';
                     } else {
-                      alert(`Payment failed: ${result.error}`);
+                      alert(`❌ Payment Failed: ${result.error}`);
                     }
                   } catch (error) {
                     console.error('Payment error:', error);
-                    alert('Payment failed. Check console for details.');
+                    alert('❌ Payment failed. Check console for details.');
                   }
                 }}
-                className="w-full px-4 py-2 bg-warning-600 hover:bg-warning-700 text-white rounded-lg transition-colors text-sm"
+                className="w-full px-4 py-2 bg-warning-600 hover:bg-warning-700 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Send XRP Payment
               </button>
@@ -692,13 +755,13 @@ export default function EnhancedBorrowerView() {
           </div>
 
           {/* Check Account Balance */}
-          <div className="bg-dark-800/50 rounded-lg p-4">
+          <div className="bg-dark-800/60 rounded-lg p-4 border border-slate-600/30">
             <h4 className="font-medium text-white mb-3">Check Account Balance</h4>
             <div className="space-y-3">
               <input
                 type="text"
                 placeholder="XRPL Address"
-                className="w-full px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all"
+                className="w-full px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all text-sm"
                 id="balanceAddress"
               />
               <button
@@ -706,38 +769,43 @@ export default function EnhancedBorrowerView() {
                   const address = (document.getElementById('balanceAddress') as HTMLInputElement)?.value;
                   
                   if (!address) {
-                    alert('Please enter an address');
+                    alert('⚠️ Please enter an address');
                     return;
                   }
 
                   try {
                     const balance = await getAccountBalance(address);
-                    alert(`Balance:\nXRP: ${balance.xrp}\nRLUSD: ${balance.rlusd}`);
+                    const message = `💰 Account Balance\n\nAddress: ${address.slice(0, 12)}...${address.slice(-8)}\nXRP: ${balance.xrp.toFixed(6)}\nRLUSD: ${balance.rlusd.toFixed(2)}`;
+                    alert(message);
                     console.log('Balance result:', balance);
                   } catch (error) {
                     console.error('Balance check error:', error);
-                    alert('Failed to check balance. Check console for details.');
+                    alert('❌ Failed to check balance. Check console for details.');
                   }
                 }}
-                className="w-full px-4 py-2 bg-secondary-600 hover:bg-secondary-700 text-white rounded-lg transition-colors text-sm"
+                className="w-full px-4 py-2 bg-secondary-600 hover:bg-secondary-700 text-white rounded-lg transition-colors text-sm font-medium"
               >
                 Check Balance
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Demo Wallet Info */}
-          <div className="bg-dark-800/50 rounded-lg p-4">
-            <h4 className="font-medium text-white mb-3">Demo Testnet Wallets</h4>
-            <div className="space-y-2 text-sm">
-              {Object.entries(DEMO_TESTNET_WALLETS).map(([key, wallet]) => (
-                <div key={key} className="text-slate-300">
-                  <span className="font-medium text-white">{wallet.name}:</span>
-                  <br />
-                  <span className="font-mono text-xs text-slate-400">{wallet.address}</span>
+        {/* Demo Wallet Info */}
+        <div className="bg-dark-800/60 rounded-lg p-4 border border-slate-600/30">
+          <h4 className="font-medium text-white mb-3">Demo Testnet Wallets</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Object.entries(DEMO_TESTNET_WALLETS).map(([key, wallet]) => (
+              <div key={key} className="text-sm">
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="w-2 h-2 bg-accent-400 rounded-full"></div>
+                  <span className="font-medium text-white">{wallet.name}</span>
                 </div>
-              ))}
-            </div>
+                <div className="font-mono text-xs text-slate-400 bg-dark-700/50 rounded px-2 py-1">
+                  {wallet.address}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </motion.div>
