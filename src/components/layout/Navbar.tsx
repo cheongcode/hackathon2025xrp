@@ -292,10 +292,10 @@ export default function Navbar() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-dark-800 border border-slate-700 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
+              className="bg-dark-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
             >
-              <div className="p-6 border-b border-slate-700">
-                <h3 className="text-xl font-bold text-white mb-2">Select Test Account</h3>
+              <div className="p-6 border-b border-slate-700/50 bg-gradient-to-r from-primary-500/10 to-secondary-500/10">
+                <h3 className="text-xl font-bold gradient-text mb-2">Select Test Account</h3>
                 <p className="text-sm text-slate-400">
                   Choose from pre-configured demo accounts to explore different user roles
                 </p>
@@ -310,40 +310,46 @@ export default function Navbar() {
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleUserSwitch(user.address)}
                       disabled={loading || user.address === account.currentUser?.address}
-                      className={`w-full p-4 rounded-lg border transition-all text-left ${
+                      className={`w-full p-4 rounded-lg border transition-all text-left group ${
                         user.address === account.currentUser?.address
-                          ? 'border-primary-500 bg-primary-500/10'
-                          : 'border-slate-600 hover:border-slate-500 bg-dark-700/50 hover:bg-dark-700'
+                          ? 'border-primary-500/50 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 shadow-lg'
+                          : 'border-slate-600/50 hover:border-primary-400/50 bg-dark-700/30 hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-secondary-500/5'
                       } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
-                          user.role === 'lender' ? 'from-success-500 to-success-600' : 'from-secondary-500 to-secondary-600'
-                        } flex items-center justify-center`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                          user.role === 'lender' 
+                            ? 'bg-gradient-to-br from-success-500 to-success-600' 
+                            : 'bg-gradient-to-br from-secondary-500 to-secondary-600'
+                        } ${user.address === account.currentUser?.address ? 'ring-2 ring-primary-400/50' : ''}`}>
                           <span className="text-sm font-bold text-white">
                             {user.name.charAt(0)}
                           </span>
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <p className="font-medium text-white">{user.name}</p>
+                            <p className="font-medium text-white group-hover:text-slate-100 transition-colors">
+                              {user.name}
+                            </p>
                             {user.address === account.currentUser?.address && (
-                              <span className="px-2 py-1 bg-primary-500 text-white text-xs rounded-full">
+                              <span className="px-2 py-1 bg-gradient-to-r from-primary-500 to-secondary-500 text-white text-xs rounded-full font-medium">
                                 Current
                               </span>
                             )}
                           </div>
                           <div className="flex items-center space-x-2 mt-1">
-                            {getRoleIcon(user.role)}
-                            <span className={`text-sm ${getRoleColor(user.role)}`}>
+                            <div className={getRoleColor(user.role)}>
+                              {getRoleIcon(user.role)}
+                            </div>
+                            <span className={`text-sm font-medium ${getRoleColor(user.role)}`}>
                               {user.role}
                             </span>
                             <span className="text-xs text-slate-500">•</span>
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-slate-400 font-medium">
                               ${user.balance?.toLocaleString() || '0'} RLUSD
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500 mt-1 font-mono">
+                          <p className="text-xs text-slate-500 mt-1 font-mono opacity-70">
                             {user.address.slice(0, 8)}...{user.address.slice(-6)}
                           </p>
                         </div>
@@ -353,10 +359,10 @@ export default function Navbar() {
                 </div>
               </div>
 
-              <div className="p-4 border-t border-slate-700 bg-dark-900/50">
+              <div className="p-4 border-t border-slate-700/50 bg-dark-900/50">
                 <button
                   onClick={() => setShowAccountSelector(false)}
-                  className="w-full px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+                  className="w-full px-4 py-2 bg-slate-600/80 hover:bg-slate-600 text-white rounded-lg transition-all font-medium"
                 >
                   Cancel
                 </button>

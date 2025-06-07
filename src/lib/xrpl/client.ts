@@ -178,7 +178,8 @@ export const getAccountBalance = async (address: string): Promise<{ xrp: number;
       ledger_index: 'validated'
     });
     
-    const xrpBalance = parseFloat(dropsToXrp(accountInfo.result.account_data.Balance.toString()));
+    const balanceString = accountInfo.result.account_data.Balance?.toString() || '0';
+    const xrpBalance = parseFloat(dropsToXrp(balanceString));
     
     // Get RLUSD balance from trust lines
     const accountLines = await client.request({
@@ -245,13 +246,10 @@ export const formatCurrency = (amount: number, currency: string = 'USD'): string
   return `${amount.toLocaleString()} ${currency}`;
 };
 
+// Consolidated pseudonymous ID generation (removing duplicate)
 export const generatePseudonymousId = (did: string): string => {
-  // Generate a pseudonymous ID based on DID for privacy
-  const hash = did.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  return `User-${Math.abs(hash).toString(36).slice(0, 8).toUpperCase()}`;
+  const hash = did.split(':').join('').toUpperCase();
+  return `USER-${hash.slice(0, 8)}`;
 };
 
 export const getTestnetExplorerUrl = (txHash: string): string => {
@@ -302,4 +300,234 @@ export const testXRPLConnection = async (): Promise<{ success: boolean; message:
   }
 };
 
-export { dropsToXrp, xrpToDrops }; 
+export { dropsToXrp, xrpToDrops };
+
+// Enhanced testnet functionality for real transactions
+export const createTestnetFundedWallet = async (): Promise<{ wallet: Wallet; funded: boolean; balance?: number }> => {
+  try {
+    const client = await getXRPLClient();
+    const newWallet = Wallet.generate(); // Generate a truly random wallet
+    
+    console.log('🔑 Generated new testnet wallet:', newWallet.address);
+    
+    // Try to fund the wallet using testnet faucet
+    try {
+      const fundResult = await client.fundWallet(newWallet);
+      console.log('💰 Successfully funded wallet with:', fundResult.balance, 'XRP');
+      
+      // Get the actual balance after funding
+      const balance = await getAccountBalance(newWallet.address);
+      
+      return { 
+        wallet: newWallet, 
+        funded: true, 
+        balance: balance.xrp 
+      };
+    } catch (fundError) {
+      console.warn('⚠️ Auto-funding failed, wallet created but not funded:', fundError);
+      return { wallet: newWallet, funded: false };
+    }
+  } catch (error) {
+    console.error('❌ Failed to create testnet wallet:', error);
+    throw error;
+  }
+};
+
+// Real XRP transaction with proper validation
+export const sendRealXRPPayment = async (
+  fromSeed: string,
+  toAddress: string,
+  amountXRP: string,
+  memo?: string
+): Promise<{ success: boolean; txHash?: string; error?: string; ledgerIndex?: number }> => {
+  try {
+    const client = await getXRPLClient();
+    const senderWallet = Wallet.fromSeed(fromSeed);
+    
+    console.log(`💸 Sending ${amountXRP} XRP from ${senderWallet.address} to ${toAddress}`);
+    
+    // Verify sender has sufficient balance
+    const senderBalance = await getAccountBalance(senderWallet.address);
+    const amountToSend = parseFloat(amountXRP);
+    
+    if (senderBalance.xrp < amountToSend + 0.00001) { // Include fee buffer
+      throw new Error(`Insufficient balance. Have: ${senderBalance.xrp} XRP, Need: ${amountToSend} XRP`);
+    }
+    
+    // Prepare payment transaction
+    const payment: Payment = {
+      TransactionType: 'Payment',
+      Account: senderWallet.address,
+      Destination: toAddress,
+      Amount: xrpToDrops(amountXRP),
+    };
+    
+    // Add memo if provided
+    if (memo) {
+      payment.Memos = [{
+        Memo: {
+          MemoData: Buffer.from(memo, 'utf8').toString('hex').toUpperCase(),
+          MemoType: Buffer.from('microloanx-payment', 'utf8').toString('hex').toUpperCase(),
+        }
+      }];
+    }
+    
+    // Auto-fill transaction details
+    const prepared = await client.autofill(payment);
+    console.log('📝 Prepared transaction:', {
+      fee: dropsToXrp(prepared.Fee),
+      sequence: prepared.Sequence,
+      lastLedgerSequence: prepared.LastLedgerSequence
+    });
+    
+    // Sign the transaction
+    const signed = senderWallet.sign(prepared);
+    console.log('✍️ Transaction signed:', signed.hash);
+    
+    // Submit and wait for validation
+    const result = await client.submitAndWait(signed.tx_blob);
+    
+    if (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta && result.result.meta.TransactionResult === 'tesSUCCESS') {
+      console.log('✅ Payment successful!', {
+        hash: result.result.hash,
+        ledgerIndex: result.result.ledger_index,
+        fee: dropsToXrp(result.result.tx_json?.Fee?.toString() || '0')
+      });
+      
+      return {
+        success: true,
+        txHash: result.result.hash,
+        ledgerIndex: result.result.ledger_index
+      };
+    } else {
+      const errorCode = (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta) 
+        ? result.result.meta.TransactionResult 
+        : 'UNKNOWN_ERROR';
+      console.error('❌ Payment failed:', errorCode);
+      return {
+        success: false,
+        error: `Transaction failed with code: ${errorCode}`
+      };
+    }
+    
+  } catch (error) {
+    console.error('❌ Error sending XRP payment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+};
+
+// Get transaction details from XRPL
+export const getTransactionDetails = async (txHash: string) => {
+  try {
+    const client = await getXRPLClient();
+    
+    const response = await client.request({
+      command: 'tx',
+      transaction: txHash
+    });
+    
+    const tx = response.result;
+    const hash = tx.hash || txHash; // Use provided hash if tx.hash is undefined
+    
+    return {
+      success: true,
+      hash,
+      ledgerIndex: tx.ledger_index,
+      date: (tx as any).date,
+      transactionType: (tx as any).TransactionType,
+      account: (tx as any).Account,
+      destination: (tx as any).Destination,
+      amount: (tx as any).Amount,
+      fee: (tx as any).Fee,
+      result: (tx.meta as any)?.TransactionResult,
+      validated: tx.validated,
+      explorerUrl: getTestnetExplorerUrl(hash)
+    };
+  } catch (error) {
+    console.error('❌ Error getting transaction details:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Transaction not found'
+    };
+  }
+};
+
+// Account transaction history
+export const getAccountTransactionHistory = async (address: string, limit: number = 20) => {
+  try {
+    const client = await getXRPLClient();
+    
+    const response = await client.request({
+      command: 'account_tx',
+      account: address,
+      limit,
+      ledger_index_min: -1,
+      ledger_index_max: -1
+    }) as any; // Using any to handle the response type
+    
+    return {
+      success: true,
+      transactions: (response.result.transactions || []).map((tx: any) => ({
+        hash: tx.hash,
+        ledgerIndex: tx.ledger_index,
+        date: tx.date,
+        transactionType: tx.TransactionType || tx.tx?.TransactionType,
+        account: tx.Account || tx.tx?.Account,
+        destination: tx.Destination || tx.tx?.Destination,
+        amount: tx.Amount || tx.tx?.Amount,
+        fee: tx.Fee || tx.tx?.Fee,
+        result: tx.meta?.TransactionResult,
+        validated: tx.validated,
+        explorerUrl: getTestnetExplorerUrl(tx.hash || '')
+      }))
+    };
+  } catch (error) {
+    console.error('❌ Error getting transaction history:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get transaction history',
+      transactions: []
+    };
+  }
+};
+
+// Helper functions that were in enhanced-client
+export const generateDIDFromAddress = (address: string): string => {
+  return `did:xrpl:${address.slice(0, 8)}:${Date.now()}`;
+};
+
+export const generatePseudonymousIdFromDID = (did: string): string => {
+  const hash = did.split(':').join('').toUpperCase();
+  return `USER-${hash.slice(0, 8)}`;
+};
+
+export const formatXRPAddress = (address: string): string => {
+  return `${address.slice(0, 8)}...${address.slice(-6)}`;
+};
+
+// Testnet wallet seeds for demo (DO NOT use in production)
+export const DEMO_TESTNET_WALLETS = {
+  borrower1: {
+    seed: 'sEdTM1uX8pu2do5XvTnutH6HsouMaM2',
+    address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
+    name: 'Maria Santos (Testnet)',
+  },
+  borrower2: {
+    seed: 'sEdSKaCy2JT7JaM7v95H9SxkhP9wS2r', 
+    address: 'rUn84CJowRBX4T9w7qjpDC8BreMnqZNYhh',
+    name: 'Ahmed Hassan (Testnet)',
+  },
+  lender1: {
+    seed: 'sEd7rBGm5kxzauSTuuQNrvpF8ZyMbL2',
+    address: 'rDdECVmwpkRo8FtY3ywCYhHX8VfuSAqghj', 
+    name: 'Jennifer Chen (Testnet)',
+  },
+  lender2: {
+    seed: 'sEdVFhpXCkemvPs6aH5caSx83BjnvR7',
+    address: 'rPp4qpHWGYBV8wC5KvCf5G8aGBkR5kZ4Ts',
+    name: 'Sarah Williams (Testnet)',
+  },
+}; 

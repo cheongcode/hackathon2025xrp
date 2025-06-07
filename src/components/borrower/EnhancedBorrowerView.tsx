@@ -15,11 +15,25 @@ import {
   CalendarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  BeakerIcon
 } from '@heroicons/react/24/outline';
 import { useAccount } from '@/lib/contexts/AccountContext';
 import { LoanRequest, LoanStatus, LOAN_CATEGORIES, ReputationScore } from '@/types';
-import { createLoanRequest, getReputationScore, getUserEscrows, getTestnetExplorerLink } from '@/lib/xrpl/escrow';
+import { 
+  createLoanRequest, 
+  getReputationScore, 
+  getUserEscrows, 
+  getTestnetExplorerLink 
+} from '@/lib/xrpl/escrow';
+import { 
+  testXRPLConnection, 
+  createTestnetFundedWallet, 
+  sendRealXRPPayment, 
+  getAccountBalance,
+  DEMO_TESTNET_WALLETS,
+  getAccountTransactionHistory 
+} from '@/lib/xrpl/client';
 import { generateMockDID, generatePseudonymousId, formatCurrency } from '@/lib/xrpl/client';
 
 // Performance optimized form state
@@ -566,6 +580,166 @@ export default function EnhancedBorrowerView() {
             )}
           </motion.button>
         </form>
+      </motion.div>
+
+      {/* Testnet Transaction Testing */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-gradient-to-br from-accent-500/10 to-warning-500/10 border border-accent-500/20 rounded-xl p-6"
+      >
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-accent-500 to-warning-500 rounded-lg flex items-center justify-center">
+            <BeakerIcon className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white">Real Testnet Transactions</h3>
+            <p className="text-sm text-slate-400">Test actual XRPL functionality with live testnet</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* XRPL Connection Status */}
+          <div className="bg-dark-800/50 rounded-lg p-4">
+            <h4 className="font-medium text-white mb-3">XRPL Connection Status</h4>
+            <button
+              onClick={async () => {
+                const result = await testXRPLConnection();
+                console.log('XRPL Connection Test:', result);
+              }}
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm"
+            >
+              Test Connection
+            </button>
+          </div>
+
+          {/* Create New Testnet Wallet */}
+          <div className="bg-dark-800/50 rounded-lg p-4">
+            <h4 className="font-medium text-white mb-3">Create Funded Testnet Wallet</h4>
+            <button
+              onClick={async () => {
+                try {
+                  const result = await createTestnetFundedWallet();
+                  console.log('New testnet wallet:', result);
+                  alert(`Created wallet: ${result.wallet.address}\nFunded: ${result.funded}\nBalance: ${result.balance || 0} XRP`);
+                } catch (error) {
+                  console.error('Failed to create wallet:', error);
+                  alert('Failed to create wallet. Check console for details.');
+                }
+              }}
+              className="px-4 py-2 bg-success-600 hover:bg-success-700 text-white rounded-lg transition-colors text-sm"
+            >
+              Create & Fund Wallet
+            </button>
+          </div>
+
+          {/* Real XRP Payment */}
+          <div className="bg-dark-800/50 rounded-lg p-4">
+            <h4 className="font-medium text-white mb-3">Send Real XRP Payment</h4>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder="To Address"
+                  className="px-3 py-2 bg-dark-700 border border-slate-600 rounded-lg text-white text-sm"
+                  id="toAddress"
+                />
+                <input
+                  type="number"
+                  placeholder="Amount XRP"
+                  step="0.000001"
+                  min="0.000001"
+                  className="px-3 py-2 bg-dark-700 border border-slate-600 rounded-lg text-white text-sm"
+                  id="xrpAmount"
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  const toAddress = (document.getElementById('toAddress') as HTMLInputElement)?.value;
+                  const amount = (document.getElementById('xrpAmount') as HTMLInputElement)?.value;
+                  
+                  if (!toAddress || !amount) {
+                    alert('Please enter both address and amount');
+                    return;
+                  }
+
+                  try {
+                    // Use the first demo wallet as sender
+                    const result = await sendRealXRPPayment(
+                      DEMO_TESTNET_WALLETS.borrower1.seed,
+                      toAddress,
+                      amount,
+                      'MicroLoanX Test Payment'
+                    );
+                    
+                    if (result.success) {
+                      alert(`Payment successful!\nTx Hash: ${result.txHash}\nLedger: ${result.ledgerIndex}`);
+                      console.log('Payment result:', result);
+                    } else {
+                      alert(`Payment failed: ${result.error}`);
+                    }
+                  } catch (error) {
+                    console.error('Payment error:', error);
+                    alert('Payment failed. Check console for details.');
+                  }
+                }}
+                className="w-full px-4 py-2 bg-warning-600 hover:bg-warning-700 text-white rounded-lg transition-colors text-sm"
+              >
+                Send XRP Payment
+              </button>
+            </div>
+          </div>
+
+          {/* Check Account Balance */}
+          <div className="bg-dark-800/50 rounded-lg p-4">
+            <h4 className="font-medium text-white mb-3">Check Account Balance</h4>
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="XRPL Address"
+                className="w-full px-3 py-2 bg-dark-700 border border-slate-600 rounded-lg text-white text-sm"
+                id="balanceAddress"
+              />
+              <button
+                onClick={async () => {
+                  const address = (document.getElementById('balanceAddress') as HTMLInputElement)?.value;
+                  
+                  if (!address) {
+                    alert('Please enter an address');
+                    return;
+                  }
+
+                  try {
+                    const balance = await getAccountBalance(address);
+                    alert(`Balance:\nXRP: ${balance.xrp}\nRLUSD: ${balance.rlusd}`);
+                    console.log('Balance result:', balance);
+                  } catch (error) {
+                    console.error('Balance check error:', error);
+                    alert('Failed to check balance. Check console for details.');
+                  }
+                }}
+                className="w-full px-4 py-2 bg-secondary-600 hover:bg-secondary-700 text-white rounded-lg transition-colors text-sm"
+              >
+                Check Balance
+              </button>
+            </div>
+          </div>
+
+          {/* Demo Wallet Info */}
+          <div className="bg-dark-800/50 rounded-lg p-4">
+            <h4 className="font-medium text-white mb-3">Demo Testnet Wallets</h4>
+            <div className="space-y-2 text-sm">
+              {Object.entries(DEMO_TESTNET_WALLETS).map(([key, wallet]) => (
+                <div key={key} className="text-slate-300">
+                  <span className="font-medium text-white">{wallet.name}:</span>
+                  <br />
+                  <span className="font-mono text-xs text-slate-400">{wallet.address}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* Enhanced Loan History */}

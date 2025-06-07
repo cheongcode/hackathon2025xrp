@@ -1,6 +1,6 @@
 import { database, DatabaseUser, DatabaseLoan, Transaction, EscrowData } from './db';
 import { LoanStatus, ReputationScore } from '@/types';
-import { generateDIDFromAddress, generatePseudonymousId } from '@/lib/xrpl/enhanced-client';
+import { generateDIDFromAddress, generatePseudonymousId } from '@/lib/xrpl/client';
 
 // Test accounts with realistic profiles
 export const TEST_ACCOUNTS: DatabaseUser[] = [
