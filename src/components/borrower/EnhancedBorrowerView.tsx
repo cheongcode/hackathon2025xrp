@@ -642,7 +642,7 @@ export default function EnhancedBorrowerView() {
                 <input
                   type="text"
                   placeholder="To Address"
-                  className="px-3 py-2 bg-dark-700 border border-slate-600 rounded-lg text-white text-sm"
+                  className="px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all"
                   id="toAddress"
                 />
                 <input
@@ -650,7 +650,7 @@ export default function EnhancedBorrowerView() {
                   placeholder="Amount XRP"
                   step="0.000001"
                   min="0.000001"
-                  className="px-3 py-2 bg-dark-700 border border-slate-600 rounded-lg text-white text-sm"
+                  className="px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all"
                   id="xrpAmount"
                 />
               </div>
@@ -698,7 +698,7 @@ export default function EnhancedBorrowerView() {
               <input
                 type="text"
                 placeholder="XRPL Address"
-                className="w-full px-3 py-2 bg-dark-700 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3 py-2 bg-dark-700/90 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-primary-500 focus:bg-dark-600 transition-all"
                 id="balanceAddress"
               />
               <button

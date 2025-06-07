@@ -105,12 +105,21 @@ export default function Home() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load marketplace data
+  // Load marketplace data on mount
   useEffect(() => {
-    loadMarketplaceData();
-  }, []);
+    // Only load data if database is initialized
+    if (account.databaseInitialized && !account.loading) {
+      loadMarketplaceData();
+    }
+  }, [account.databaseInitialized, account.loading]);
 
   const loadMarketplaceData = async () => {
+    // Double check database is initialized
+    if (!account.databaseInitialized) {
+      console.log('⏳ Database not ready yet, skipping marketplace data load');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
@@ -138,6 +147,15 @@ export default function Home() {
       
     } catch (error) {
       console.error('Failed to load marketplace data:', error);
+      // Don't break the app if marketplace data fails to load
+      setPlatformStats({
+        totalFunded: 0,
+        activeBorrowers: 0,
+        successRate: 0,
+        totalLoans: 0,
+        totalUsers: 0,
+      });
+      setRecentActivity([]);
     } finally {
       setIsLoading(false);
     }

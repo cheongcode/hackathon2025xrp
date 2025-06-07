@@ -341,32 +341,74 @@ export const sendRealXRPPayment = async (
   memo?: string
 ): Promise<{ success: boolean; txHash?: string; error?: string; ledgerIndex?: number }> => {
   try {
+    // Input validation
+    if (!fromSeed || !toAddress || !amountXRP) {
+      return {
+        success: false,
+        error: 'Missing required parameters: fromSeed, toAddress, or amountXRP'
+      };
+    }
+
+    // Validate XRP address format
+    if (!isValidXRPAddress(toAddress)) {
+      return {
+        success: false,
+        error: 'Invalid destination address format'
+      };
+    }
+
+    // Validate amount
+    const amountToSend = parseFloat(amountXRP);
+    if (isNaN(amountToSend) || amountToSend <= 0) {
+      return {
+        success: false,
+        error: 'Invalid amount: must be a positive number'
+      };
+    }
+
+    if (amountToSend < 0.000001) {
+      return {
+        success: false,
+        error: 'Amount too small: minimum is 0.000001 XRP'
+      };
+    }
+
     const client = await getXRPLClient();
     const senderWallet = Wallet.fromSeed(fromSeed);
     
     console.log(`💸 Sending ${amountXRP} XRP from ${senderWallet.address} to ${toAddress}`);
     
+    // Check if sender and receiver are different
+    if (senderWallet.address === toAddress) {
+      return {
+        success: false,
+        error: 'Cannot send to the same address'
+      };
+    }
+
     // Verify sender has sufficient balance
     const senderBalance = await getAccountBalance(senderWallet.address);
-    const amountToSend = parseFloat(amountXRP);
     
     if (senderBalance.xrp < amountToSend + 0.00001) { // Include fee buffer
-      throw new Error(`Insufficient balance. Have: ${senderBalance.xrp} XRP, Need: ${amountToSend} XRP`);
+      return {
+        success: false,
+        error: `Insufficient balance. Have: ${senderBalance.xrp} XRP, Need: ${amountToSend} XRP (plus network fee)`
+      };
     }
     
-    // Prepare payment transaction
+    // Prepare payment transaction with proper validation
     const payment: Payment = {
       TransactionType: 'Payment',
       Account: senderWallet.address,
-      Destination: toAddress,
+      Destination: toAddress.trim(), // Ensure no whitespace
       Amount: xrpToDrops(amountXRP),
     };
     
     // Add memo if provided
-    if (memo) {
+    if (memo && memo.trim()) {
       payment.Memos = [{
         Memo: {
-          MemoData: Buffer.from(memo, 'utf8').toString('hex').toUpperCase(),
+          MemoData: Buffer.from(memo.trim(), 'utf8').toString('hex').toUpperCase(),
           MemoType: Buffer.from('microloanx-payment', 'utf8').toString('hex').toUpperCase(),
         }
       }];
@@ -377,7 +419,9 @@ export const sendRealXRPPayment = async (
     console.log('📝 Prepared transaction:', {
       fee: dropsToXrp(prepared.Fee),
       sequence: prepared.Sequence,
-      lastLedgerSequence: prepared.LastLedgerSequence
+      lastLedgerSequence: prepared.LastLedgerSequence,
+      account: prepared.Account,
+      destination: prepared.Destination
     });
     
     // Sign the transaction

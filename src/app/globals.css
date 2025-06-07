@@ -114,11 +114,11 @@ body {
   /* Input styles with better contrast */
   .input-primary {
     @apply block w-full rounded-xl px-5 py-4;
-    @apply bg-dark-50/30 border-2 border-slate-400/30 text-slate-100;
+    @apply bg-dark-700/80 border-2 border-slate-600/50 text-white;
     @apply placeholder-slate-400;
-    @apply focus:outline-none focus:ring-4 focus:ring-secondary-500/50 focus:border-secondary-400;
+    @apply focus:outline-none focus:ring-4 focus:ring-primary-500/50 focus:border-primary-400;
     @apply transition-all duration-200 ease-in-out;
-    @apply hover:bg-dark-50/40 focus:bg-dark-50/40;
+    @apply hover:bg-dark-600/80 focus:bg-dark-600/90;
     @apply backdrop-blur-sm;
     @apply text-lg font-medium;
   }
