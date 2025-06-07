@@ -632,12 +632,17 @@ export const DEMO_TESTNET_WALLETS = {
   },
   lender1: {
     seed: 'sEd7rBGm5kxzauSTuuQNrvpF8ZyMbL2',
-    address: 'rDdECVmwpkRo8FtY3ywCYhHX8VfuSAqghj', 
+    address: 'rS5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9T4', // Match database Jennifer Chen address
     name: 'Jennifer Chen (Testnet)',
+  },
+  lender1_temp: {
+    seed: 'TEMP_SEED_NEEDED', // You'll need to provide the seed for this address
+    address: 'rPJnG9CLsyf4rqJe1pmpfRt43jFiK7jTyf',
+    name: 'Jennifer Chen (Temp Testnet)',
   },
   lender2: {
     seed: 'sEdVFhpXCkemvPs6aH5caSx83BjnvR7',
-    address: 'rPp4qpHWGYBV8wC5KvCf5G8aGBkR5kZ4Ts',
+    address: 'rU7G8H9I0J1K2L3M4N5O6P7Q8R9S0T1V6', // Match database Sarah Williams address
     name: 'Sarah Williams (Testnet)',
   },
 };

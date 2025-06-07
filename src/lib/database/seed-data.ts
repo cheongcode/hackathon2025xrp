@@ -83,6 +83,21 @@ export const TEST_ACCOUNTS: DatabaseUser[] = [
     },
   },
   {
+    address: 'rPJnG9CLsyf4rqJe1pmpfRt43jFiK7jTyf',
+    name: 'Jennifer Chen (Temp)',
+    role: 'lender',
+    balance: 50000,
+    did: 'did:xrpl:TEMP1234:1704157200000',
+    pseudonymousId: 'LENDER-JENNY-TEMP',
+    createdAt: Date.now() - 86400000 * 1,
+    lastActive: Date.now() - 300000,
+    preferences: {
+      notifications: true,
+      autoFunding: true,
+      riskTolerance: 'medium' as const,
+    },
+  },
+  {
     address: 'rT6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0U5',
     name: 'Michael Thompson',
     role: 'lender',
