@@ -645,7 +645,7 @@ export default function EnhancedLenderView() {
         ) : (
           <>
             {/* Enhanced Loan Opportunities */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <AnimatePresence>
                 {filteredLoans.map((request, index) => {
                   const borrowerProfile = getBorrowerProfile(request.borrowerAddress);
@@ -660,173 +660,113 @@ export default function EnhancedLenderView() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -20, scale: 0.95 }}
                       transition={{ duration: 0.4, delay: index * 0.05 }}
-                      whileHover={{ scale: 1.01, y: -2 }}
-                      className="bg-gradient-to-br from-dark-800/80 to-dark-900/80 border border-slate-600/30 rounded-2xl p-6 hover:border-secondary-400/50 transition-all duration-300 shadow-lg hover:shadow-secondary-500/20 backdrop-blur-sm"
+                      whileHover={{ scale: 1.005, y: -1 }}
+                      className="glass-card-premium hover:border-secondary-400/50 transition-all duration-300"
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* Loan Details - Main Section */}
-                        <div className="lg:col-span-5">
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <h4 className="text-xl font-bold text-white mb-2 line-clamp-2">
+                      <div className="flex flex-col lg:flex-row gap-4">
+                        {/* Main Info - Compact Layout */}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-lg font-bold text-white mb-2 line-clamp-2">
                                 {request.purpose}
                               </h4>
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                {request.tags?.map((tag, i) => (
-                                  <motion.span
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {request.tags?.slice(0, 3).map((tag, i) => (
+                                  <span
                                     key={i}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: 0.1 + i * 0.05 }}
-                                    className="px-3 py-1 bg-secondary-500/20 text-secondary-300 rounded-full text-xs font-medium border border-secondary-400/30"
+                                    className="px-2 py-0.5 bg-secondary-500/20 text-secondary-300 rounded-full text-xs font-medium border border-secondary-400/30"
                                   >
                                     {tag}
-                                  </motion.span>
+                                  </span>
                                 ))}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-3xl font-bold text-success-400">
+                            <div className="text-right ml-4">
+                              <p className="text-2xl font-bold text-success-400">
                                 ${request.amount.toLocaleString()}
                               </p>
-                              <p className="text-sm text-slate-400">RLUSD</p>
+                              <p className="text-xs text-slate-400">RLUSD</p>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-400 text-sm">Interest Rate</span>
-                                <span className="text-accent-400 font-bold text-lg">{request.interestRate?.toFixed(1)}%</span>
-                              </div>
+                          {/* Metrics Row */}
+                          <div className="grid grid-cols-4 gap-2 mb-3">
+                            <div className="text-center">
+                              <p className="text-accent-400 font-bold">{request.interestRate?.toFixed(1)}%</p>
+                              <p className="text-xs text-slate-400">Rate</p>
                             </div>
-                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-400 text-sm">Period</span>
-                                <span className="text-white font-bold text-lg">{request.repaymentPeriod}d</span>
-                              </div>
+                            <div className="text-center">
+                              <p className="text-white font-bold">{request.repaymentPeriod}d</p>
+                              <p className="text-xs text-slate-400">Period</p>
                             </div>
-                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-400 text-sm">Risk Score</span>
-                                <span className={`font-bold text-lg ${getRiskColor(request.riskScore || 50)}`}>
-                                  {request.riskScore}/100
-                                </span>
-                              </div>
+                            <div className="text-center">
+                              <p className={`font-bold ${getRiskColor(request.riskScore || 50)}`}>
+                                {(request.riskScore || 50).toFixed(0)}
+                              </p>
+                              <p className="text-xs text-slate-400">Risk</p>
                             </div>
-                            <div className="bg-dark-700/50 rounded-lg p-3 border border-slate-600/30">
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-400 text-sm">Created</span>
-                                <span className="text-white font-medium text-sm">
-                                  {new Date(request.createdAt).toLocaleDateString()}
-                                </span>
-                              </div>
+                            <div className="text-center">
+                              <p className="text-slate-200 font-bold text-sm">
+                                {new Date(request.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </p>
+                              <p className="text-xs text-slate-400">Created</p>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Borrower Profile */}
-                        <div className="lg:col-span-4">
-                          <div className="bg-gradient-to-br from-primary-500/10 to-secondary-500/10 border border-primary-400/30 rounded-xl p-4 h-full">
-                            <h5 className="text-lg font-bold text-white mb-4 flex items-center">
-                              <UserIcon className="h-5 w-5 mr-2 text-primary-400" />
-                              Borrower Profile
-                            </h5>
-                            
-                            {borrowerProfile && (
-                              <div className="space-y-3">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white font-bold text-lg">
-                                      {borrowerProfile.name.charAt(0)}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <p className="text-white font-semibold">{borrowerProfile.name}</p>
-                                    <p className="text-slate-400 text-sm font-mono">
-                                      {request.pseudonymousId || borrowerProfile.pseudonymousId}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {reputation ? (
-                                  <div className="grid grid-cols-2 gap-3 text-sm mt-3">
-                                    <div>
-                                      <span className="text-slate-400">Trust Score:</span>
-                                      <div className="flex items-center space-x-2 mt-1">
-                                        <div className="flex-1 bg-dark-700 rounded-full h-2">
-                                          <motion.div 
-                                            className="bg-gradient-to-r from-success-500 to-accent-400 h-2 rounded-full"
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${reputation.trustScore}%` }}
-                                            transition={{ duration: 1, delay: 0.2 }}
-                                          />
-                                        </div>
-                                        <span className="text-success-400 font-bold">{reputation.trustScore}/100</span>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400">Total Loans:</span>
-                                      <p className="text-white font-semibold mt-1">{reputation.totalLoans}</p>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400">Success Rate:</span>
-                                      <p className="text-success-400 font-semibold mt-1">
-                                        {reputation.totalLoans > 0 ? `${Math.round((reputation.successfulRepayments / reputation.totalLoans) * 100)}%` : 'N/A'}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400">Verification:</span>
-                                      <div className="flex items-center space-x-1 mt-1">
-                                        <ShieldCheckIcon className="h-4 w-4 text-accent-400" />
-                                        <span className="text-accent-400 font-medium text-xs">
-                                          {reputation.verificationLevel || 'Basic'}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="text-slate-400 text-sm mt-3">No reputation data available.</div>
-                                )}
+                          {/* Borrower Info Compact */}
+                          {borrowerProfile && (
+                            <div className="flex items-center space-x-3 p-3 bg-dark-700/30 rounded-lg">
+                              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                                <span className="text-white font-bold text-sm">
+                                  {borrowerProfile.name.charAt(0)}
+                                </span>
                               </div>
-                            )}
-                            
-                            {!borrowerProfile && (
-                              <div className="text-center text-slate-400 py-4">
-                                <UserIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Borrower profile loading...</p>
-                                <p className="text-xs font-mono mt-1">
-                                  {request.pseudonymousId || 'Anonymous'}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-semibold text-sm truncate">{borrowerProfile.name}</p>
+                                <p className="text-slate-400 text-xs font-mono truncate">
+                                  {request.pseudonymousId || borrowerProfile.pseudonymousId}
                                 </p>
                               </div>
-                            )}
-                          </div>
+                              {reputation && (
+                                <div className="text-right">
+                                  <div className="flex items-center space-x-1">
+                                    <div className="w-6 bg-dark-600 rounded-full h-1.5">
+                                      <div 
+                                        className="bg-gradient-to-r from-success-500 to-accent-400 h-1.5 rounded-full"
+                                        style={{ width: `${reputation.trustScore}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-success-400 font-bold text-xs">{reputation.trustScore}</span>
+                                  </div>
+                                  <p className="text-xs text-slate-400">Trust Score</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
 
-                        {/* Action Area */}
-                        <div className="lg:col-span-3 flex flex-col justify-center">
-                          <div className="bg-gradient-to-br from-success-500/10 to-accent-500/10 border border-success-400/30 rounded-xl p-4 text-center mb-4">
-                            <p className="text-success-300 text-sm mb-2">Expected Return</p>
-                            <p className="text-3xl font-bold text-success-400 mb-1">
+                        {/* Action Area - Compact */}
+                        <div className="lg:w-48 flex lg:flex-col gap-3">
+                          <div className="flex-1 bg-gradient-to-br from-success-500/10 to-accent-500/10 border border-success-400/30 rounded-xl p-3 text-center">
+                            <p className="text-success-300 text-xs mb-1">Expected Return</p>
+                            <p className="text-xl font-bold text-success-400">
                               ${expectedReturn.toLocaleString()}
                             </p>
-                            <p className="text-success-300 text-sm">
-                              Profit: +${profit.toLocaleString()}
+                            <p className="text-success-300 text-xs">
+                              +${profit.toLocaleString()} ({((profit / request.amount) * 100).toFixed(1)}%)
                             </p>
-                            <div className="mt-2 text-xs text-slate-400">
-                              ROI: {((profit / request.amount) * 100).toFixed(1)}%
-                            </div>
                           </div>
                           
                           <motion.button
                             onClick={() => handleFundLoan(request)}
                             disabled={fundingLoans.has(request.id) || account.availableBalance < request.amount}
-                            className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center space-x-3 transition-all duration-200 ${
+                            className={`flex-1 lg:flex-none lg:h-12 rounded-xl font-bold text-white flex items-center justify-center space-x-2 transition-all duration-200 ${
                               fundingLoans.has(request.id) || account.availableBalance < request.amount
                                 ? 'bg-slate-600 cursor-not-allowed opacity-50' 
                                 : 'bg-gradient-to-r from-accent-600 to-accent-500 hover:from-accent-500 hover:to-accent-400 shadow-lg hover:shadow-accent-500/40'
                             }`}
-                            whileHover={!fundingLoans.has(request.id) && account.availableBalance >= request.amount ? { scale: 1.02, y: -1 } : {}}
+                            whileHover={!fundingLoans.has(request.id) && account.availableBalance >= request.amount ? { scale: 1.02 } : {}}
                             whileTap={!fundingLoans.has(request.id) && account.availableBalance >= request.amount ? { scale: 0.98 } : {}}
                           >
                             {fundingLoans.has(request.id) ? (
@@ -834,19 +774,19 @@ export default function EnhancedLenderView() {
                                 <motion.div
                                   animate={{ rotate: 360 }}
                                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                                  className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                                 />
-                                <span>Funding Loan...</span>
+                                <span className="text-sm">Funding...</span>
                               </>
                             ) : account.availableBalance < request.amount ? (
                               <>
-                                <XCircleIcon className="h-5 w-5" />
-                                <span>Insufficient Balance</span>
+                                <XCircleIcon className="h-4 w-4" />
+                                <span className="text-sm">Insufficient</span>
                               </>
                             ) : (
                               <>
-                                <BanknotesIcon className="h-5 w-5" />
-                                <span>Fund This Loan</span>
+                                <BanknotesIcon className="h-4 w-4" />
+                                <span className="text-sm">Fund Loan</span>
                               </>
                             )}
                           </motion.button>

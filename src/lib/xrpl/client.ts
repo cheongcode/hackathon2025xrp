@@ -398,10 +398,10 @@ export const sendRealXRPPayment = async (
     const senderBalance = await client.getXrpBalance(senderWallet.address);
     console.log(`💰 Sender balance: ${senderBalance} XRP`);
     
-    if (parseFloat(senderBalance) < amount + 0.00001) {
+    if (senderBalance < parseFloat(amountXRP) + 0.00001) {
       return {
         success: false,
-        error: `Insufficient balance. Have: ${senderBalance} XRP, Need: ${amount} XRP (plus network fee)`
+        error: `Insufficient balance. Have: ${senderBalance} XRP, Need: ${amountXRP} XRP (plus network fee)`
       };
     }
 
