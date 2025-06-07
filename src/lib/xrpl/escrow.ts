@@ -82,6 +82,70 @@ export async function createLoanEscrow(
 }
 
 /**
+ * Real XRP loan repayment to Maria Santos testnet account
+ */
+export async function repayLoanWithXRP(
+  borrowerSeed: string,
+  escrowId: string,
+  loanAmount: number
+): Promise<{ success: boolean; txHash?: string; error?: string; ledgerIndex?: number }> {
+  try {
+    // Maria Santos testnet address from the demo wallets
+    const mariaSantosAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+    
+    // Import the real XRP payment function
+    const { sendRealXRPPayment } = await import('@/lib/xrpl/client');
+    
+    console.log('🚀 Starting loan repayment with XRP transaction...');
+    console.log(`💰 Repaying loan amount: $${loanAmount} RLUSD`);
+    console.log(`📤 Sending 1 XRP to Maria Santos: ${mariaSantosAddress}`);
+    
+    // Send 1 XRP to Maria Santos as proof of repayment
+    const paymentResult = await sendRealXRPPayment(
+      borrowerSeed,
+      mariaSantosAddress,
+      '1', // 1 XRP
+      `MicroLoanX Loan Repayment - Amount: $${loanAmount} RLUSD - Escrow: ${escrowId}`
+    );
+    
+    if (!paymentResult.success) {
+      console.error('❌ XRP payment failed:', paymentResult.error);
+      return {
+        success: false,
+        error: paymentResult.error || 'XRP payment failed'
+      };
+    }
+    
+    console.log('✅ XRP payment successful:', paymentResult.txHash);
+    
+    // Update escrow status in our mock store
+    const escrowDetails = escrowStore.get(escrowId);
+    if (escrowDetails) {
+      escrowDetails.status = 'fulfilled';
+      escrowStore.set(escrowId, escrowDetails);
+      
+      // Update reputation score
+      if (escrowDetails.borrowerDID) {
+        updateReputationScore(escrowDetails.borrowerDID, true);
+      }
+    }
+    
+    return {
+      success: true,
+      txHash: paymentResult.txHash,
+      ledgerIndex: paymentResult.ledgerIndex
+    };
+    
+  } catch (error) {
+    console.error('❌ Error in loan repayment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error during repayment'
+    };
+  }
+}
+
+/**
  * Mock loan repayment
  */
 export async function repayLoan(

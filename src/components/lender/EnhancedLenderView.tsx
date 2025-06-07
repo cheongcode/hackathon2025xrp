@@ -23,6 +23,7 @@ import {
 import { useAccount } from '@/lib/contexts/AccountContext';
 import { LoanRequest, LoanStatus, MOCK_REPUTATION_SCORES } from '@/types';
 import { createLoanEscrow, getAvailableLoanRequests, getUserEscrows, getTestnetExplorerLink } from '@/lib/xrpl/escrow';
+import { sendRealXRPPayment, DEMO_TESTNET_WALLETS } from '@/lib/xrpl/client';
 import { Wallet } from 'xrpl';
 import { TEST_ACCOUNTS } from '@/lib/database/seed-data';
 
@@ -258,23 +259,69 @@ export default function EnhancedLenderView() {
   const handleFundLoan = async (request: LoanRequest) => {
     if (!account.currentUser) return;
     
+    // Show confirmation dialog
+    const confirmed = confirm(
+      `🚀 Fund Loan\n\n` +
+      `Loan Amount: $${request.amount.toLocaleString()} RLUSD\n` +
+      `Interest Rate: ${request.interestRate}%\n` +
+      `Borrower: ${request.pseudonymousId}\n` +
+      `Purpose: ${request.purpose}\n\n` +
+      `This will send 1 XRP to Maria Santos (rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh) as proof of funding.\n\n` +
+      `Continue with funding?`
+    );
+
+    if (!confirmed) return;
+    
     setFundingLoans(prev => new Set(prev).add(request.id));
 
     try {
-      // Update in database via context
-      await fundLoan(request.id, account.currentUser.address, request.amount);
+      console.log('🚀 Starting loan funding process...');
+      console.log('📊 Current user:', account.currentUser);
+      console.log('💰 Loan request:', request);
       
-      // Refresh loans from database
-      await loadMarketplaceLoans();
+      // Fund loan with XRP transaction
+      const fundingResult = await fundLoan(
+        request.id, 
+        account.currentUser.address, 
+        request.amount
+      );
       
-      updateUserBalance(-request.amount);
+      if (fundingResult.success) {
+        // Store the transaction hash for the UI
+        setSuccessMessage(`Loan funded successfully! Transaction: ${fundingResult.txHash}`);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 10000); // Show for 10 seconds
+        
+        // Show success message with transaction details but don't auto-open
+        alert(
+          `✅ Loan Funded Successfully!\n\n` +
+          `🔗 Transaction Hash: ${fundingResult.txHash}\n` +
+          `💰 Amount: 1 XRP sent to Maria Santos\n\n` +
+          `Click the "View TX" button in the loan table to view the transaction on the explorer.`
+        );
+        
+        // Refresh data to show updated loan status
+        loadMarketplaceLoans();
+        
+      } else {
+        console.error('❌ Loan funding failed:', fundingResult);
+        const errorMessage = typeof fundingResult === 'object' && fundingResult !== null && 'error' in fundingResult 
+          ? (fundingResult as any).error 
+          : 'Unknown error occurred';
+        alert(
+          `❌ Loan Funding Failed\n\n` +
+          `Error: ${errorMessage}\n\n` +
+          `Please check your wallet balance and try again.`
+        );
+      }
       
-      setSuccessMessage(`Successfully funded $${request.amount.toLocaleString()} RLUSD loan!`);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 4000);
-
     } catch (error) {
-      console.error('Error funding loan:', error);
+      console.error('❌ Error funding loan:', error);
+      alert(
+        `❌ Unexpected Error\n\n` +
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}\n\n` +
+        `Please try again later.`
+      );
     } finally {
       setFundingLoans(prev => {
         const newSet = new Set(prev);

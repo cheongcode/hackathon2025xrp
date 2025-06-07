@@ -19,22 +19,17 @@ import {
   BeakerIcon
 } from '@heroicons/react/24/outline';
 import { useAccount } from '@/lib/contexts/AccountContext';
-import { LoanRequest, LoanStatus, LOAN_CATEGORIES, ReputationScore } from '@/types';
-import { 
-  createLoanRequest, 
-  getReputationScore, 
-  getUserEscrows, 
-  getTestnetExplorerLink 
-} from '@/lib/xrpl/escrow';
+import { LoanRequest, LoanStatus, LOAN_CATEGORIES } from '@/types';
+import { getTestnetExplorerLink } from '@/lib/xrpl/escrow';
 import { 
   testXRPLConnection, 
   createTestnetFundedWallet, 
   sendRealXRPPayment, 
   getAccountBalance,
   DEMO_TESTNET_WALLETS,
-  getAccountTransactionHistory 
+  generateMockDID, 
+  generatePseudonymousId 
 } from '@/lib/xrpl/client';
-import { generateMockDID, generatePseudonymousId, formatCurrency } from '@/lib/xrpl/client';
 
 // Performance optimized form state
 interface LoanFormState {
@@ -54,20 +49,14 @@ const initialFormState: LoanFormState = {
 };
 
 export default function EnhancedBorrowerView() {
-  const { account, updateUserBalance, refreshAccountData, createLoan } = useAccount();
+  const { account, updateUserBalance, refreshAccountData, createLoan, repayLoan } = useAccount();
   
   // Optimized state management
   const [formState, setFormState] = useState<LoanFormState>(initialFormState);
   const [loanRequests, setLoanRequests] = useState<LoanRequest[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [analytics, setAnalytics] = useState({
-    totalRequests: 0,
-    approvalRate: 0,
-    averageAmount: 0,
-    pendingAmount: 0,
-    creditUtilization: 0
-  });
+  const [repayingLoans, setRepayingLoans] = useState<Set<string>>(new Set());
 
   // Memoized calculations for performance
   const calculatedMetrics = useMemo(() => {
@@ -92,7 +81,6 @@ export default function EnhancedBorrowerView() {
     };
   }, [loanRequests, account.availableBalance]);
 
-  // Interest rate calculation with caching
   const calculateInterestRate = useCallback((trustScore: number): number => {
     const baseRate = 12.0;
     const discount = (trustScore / 100) * 4;
@@ -103,61 +91,103 @@ export default function EnhancedBorrowerView() {
     return Math.min(100, Math.max(20, trustScore + Math.random() * 20 - 10));
   }, []);
 
-  // Load user data on mount and user change
-  useEffect(() => {
-    if (account.currentUser) {
-      loadUserLoanHistory();
+  const handleRepayLoan = async (loan: LoanRequest) => {
+    if (!account.currentUser || !loan.escrowId) {
+      alert('❌ Cannot repay loan: Missing user or escrow information');
+      return;
     }
-  }, [account.currentUser]);
 
-  const loadUserLoanHistory = async () => {
-    if (!account.currentUser) return;
-    
+    // Get the borrower's seed from demo wallets
+    const borrowerWallet = Object.values(DEMO_TESTNET_WALLETS).find(
+      wallet => wallet.address === account.currentUser?.address
+    );
+
+    if (!borrowerWallet) {
+      alert('❌ Cannot repay loan: Borrower wallet not found in demo wallets');
+      return;
+    }
+
+    const confirmed = confirm(
+      `🔄 Repay Loan\n\n` +
+      `Loan Amount: $${loan.amount.toLocaleString()} RLUSD\n` +
+      `Interest Rate: ${loan.interestRate}%\n` +
+      `Total Repayment: $${(loan.amount * (1 + (loan.interestRate || 0) / 100)).toLocaleString()}\n\n` +
+      `This will send 1 XRP to Maria Santos (rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh) as proof of repayment.\n\n` +
+      `Continue with repayment?`
+    );
+
+    if (!confirmed) return;
+
+    setRepayingLoans(prev => new Set(prev).add(loan.id));
+
     try {
-      // In a real app, this would fetch from API
-      const userEscrows = getUserEscrows(account.currentUser.address);
+      console.log('🚀 Starting loan repayment process...');
       
-      // Mock loan requests for demo
-      const mockRequests: LoanRequest[] = [
-        {
-          id: 'loan-001',
-          borrowerAddress: account.currentUser.address,
-          borrowerDID: account.currentUser.did,
-          pseudonymousId: account.currentUser.pseudonymousId,
-          amount: 1000,
-          currency: 'RLUSD',
-          purpose: 'Small business expansion',
-          tags: ['#business'],
-          status: 'FUNDED' as LoanStatus,
-          createdAt: Date.now() - 86400000 * 10,
-          fundedAt: Date.now() - 86400000 * 9,
-          interestRate: 8.5,
-          repaymentPeriod: 30,
-          riskScore: 75,
-          txHash: 'TX1234567890ABCDEF',
-        },
-        {
-          id: 'loan-002',
-          borrowerAddress: account.currentUser.address,
-          borrowerDID: account.currentUser.did,
-          pseudonymousId: account.currentUser.pseudonymousId,
-          amount: 500,
-          currency: 'RLUSD',
-          purpose: 'Emergency medical expenses',
-          tags: ['#healthcare', '#emergency'],
-          status: 'PENDING' as LoanStatus,
-          createdAt: Date.now() - 86400000 * 2,
-          interestRate: 9.0,
-          repaymentPeriod: 21,
-          riskScore: 65,
-        },
-      ];
-      
-      setLoanRequests(mockRequests);
+      const repaymentResult = await repayLoan(
+        loan.id,
+        borrowerWallet.seed,
+        loan.escrowId,
+        loan.amount
+      );
+
+      if (repaymentResult.success && repaymentResult.txHash) {
+        // Show success message with transaction details but don't auto-open
+        alert(
+          `✅ Loan Repaid Successfully!\n\n` +
+          `🔗 Transaction Hash: ${repaymentResult.txHash}\n` +
+          `💰 Amount: 1 XRP sent to Maria Santos\n\n` +
+          `Click the "View TX" button in the loan table to view the transaction on the explorer.\n\n` +
+          `Your loan has been marked as repaid. Thank you for using MicroLoanX!`
+        );
+        
+        // Refresh loan data
+        await loadUserLoanHistory();
+        
+      } else {
+        alert(
+          `❌ Loan Repayment Failed\n\n` +
+          `Error: ${repaymentResult.error || 'Unknown error occurred'}\n\n` +
+          `Please check your wallet balance and try again.`
+        );
+      }
     } catch (error) {
-      console.error('Failed to load loan history:', error);
+      console.error('❌ Error during loan repayment:', error);
+      alert('❌ Loan repayment failed. Check console for details.');
+    } finally {
+      setRepayingLoans(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(loan.id);
+        return newSet;
+      });
     }
   };
+
+  const loadUserLoanHistory = useCallback(async () => {
+    if (!account.currentUser || !account.databaseInitialized) return;
+    
+    try {
+      // Load real loans from database
+      const { database } = await import('@/lib/database/db');
+      const allLoans = await database.getAllLoans();
+      
+      // Filter loans for current user
+      const userLoans = allLoans.filter(loan => 
+        loan.borrowerAddress === account.currentUser?.address
+      );
+      
+      setLoanRequests(userLoans);
+    } catch (error) {
+      console.error('Failed to load loan history:', error);
+      setLoanRequests([]);
+    }
+  }, [account.currentUser, account.databaseInitialized]);
+
+  // Load user data on mount and user change
+  useEffect(() => {
+    if (account.currentUser && account.databaseInitialized) {
+      loadUserLoanHistory();
+    }
+  }, [account.currentUser, account.databaseInitialized, loadUserLoanHistory]);
 
   const handleFormChange = useCallback((field: keyof LoanFormState, value: string | string[]) => {
     setFormState(prev => ({ ...prev, [field]: value }));
@@ -895,7 +925,28 @@ export default function EnhancedBorrowerView() {
                         </span>
                       </td>
                       <td className="py-4 px-2">
-                        {request.txHash ? (
+                        {request.status === 'FUNDED' ? (
+                          <motion.button
+                            onClick={() => handleRepayLoan(request)}
+                            disabled={repayingLoans.has(request.id)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                              repayingLoans.has(request.id)
+                                ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                                : 'bg-success-600 hover:bg-success-700 text-white hover:scale-105'
+                            }`}
+                            whileHover={!repayingLoans.has(request.id) ? { scale: 1.05 } : {}}
+                            whileTap={!repayingLoans.has(request.id) ? { scale: 0.95 } : {}}
+                          >
+                            {repayingLoans.has(request.id) ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 border border-slate-400 border-t-transparent rounded-full animate-spin" />
+                                <span>Repaying...</span>
+                              </div>
+                            ) : (
+                              '💰 Repay Loan'
+                            )}
+                          </motion.button>
+                        ) : request.txHash ? (
                           <motion.a
                             href={getTestnetExplorerLink(request.txHash)}
                             target="_blank"
@@ -904,6 +955,16 @@ export default function EnhancedBorrowerView() {
                             whileHover={{ scale: 1.05 }}
                           >
                             View TX →
+                          </motion.a>
+                        ) : request.repaymentTxHash ? (
+                          <motion.a
+                            href={getTestnetExplorerLink(request.repaymentTxHash)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-success-400 hover:text-success-300 text-sm font-medium"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            Repayment TX →
                           </motion.a>
                         ) : (
                           <span className="text-slate-500 text-sm">Pending</span>

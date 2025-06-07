@@ -293,16 +293,16 @@ export default function Navbar() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-dark-800/95 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
+              className="bg-dark-900/98 backdrop-blur-xl border border-slate-600/80 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
             >
-              <div className="p-6 border-b border-slate-700/50 bg-gradient-to-r from-primary-500/10 to-secondary-500/10">
-                <h3 className="text-xl font-bold gradient-text mb-2">Select Test Account</h3>
-                <p className="text-sm text-slate-400">
+              <div className="p-6 border-b border-slate-600/80 bg-gradient-to-r from-primary-600/20 to-secondary-600/20">
+                <h3 className="text-xl font-bold text-white mb-2">Select Test Account</h3>
+                <p className="text-sm text-slate-300">
                   Choose from pre-configured demo accounts to explore different user roles
                 </p>
               </div>
 
-              <div className="p-4 max-h-96 overflow-y-auto">
+              <div className="p-4 max-h-96 overflow-y-auto bg-dark-900/95">
                 <div className="space-y-3">
                   {availableUsers.map((user) => (
                     <motion.button
@@ -313,15 +313,15 @@ export default function Navbar() {
                       disabled={loading || user.address === account.currentUser?.address}
                       className={`w-full p-4 rounded-lg border transition-all text-left group ${
                         user.address === account.currentUser?.address
-                          ? 'border-primary-500/50 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 shadow-lg ring-2 ring-primary-400/30'
-                          : 'border-slate-600/50 hover:border-primary-400/50 bg-dark-700/30 hover:bg-gradient-to-r hover:from-primary-500/5 hover:to-secondary-500/5'
+                          ? 'border-primary-400/80 bg-gradient-to-r from-primary-600/20 to-secondary-600/20 shadow-lg ring-2 ring-primary-400/50'
+                          : 'border-slate-500/60 hover:border-primary-400/70 bg-dark-800/80 hover:bg-gradient-to-r hover:from-primary-600/10 hover:to-secondary-600/10'
                       } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${
                           user.role === 'lender' ? 'from-success-500 to-accent-500' : 'from-primary-500 to-secondary-500'
-                        } flex items-center justify-center ring-2 ring-offset-2 ring-offset-dark-800 ${
-                          user.address === account.currentUser?.address ? 'ring-primary-400/50' : 'ring-transparent'
+                        } flex items-center justify-center ring-2 ring-offset-2 ring-offset-dark-900 ${
+                          user.address === account.currentUser?.address ? 'ring-primary-400/60' : 'ring-transparent'
                         }`}>
                           <span className="text-lg font-bold text-white">
                             {user.name.charAt(0)}
@@ -331,7 +331,7 @@ export default function Navbar() {
                           <div className="flex items-center space-x-2">
                             <p className="font-semibold text-white truncate">{user.name}</p>
                             {user.address === account.currentUser?.address && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-500/20 text-primary-300 border border-primary-400/30">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-500/30 text-primary-200 border border-primary-400/40">
                                 Current
                               </span>
                             )}
@@ -341,21 +341,21 @@ export default function Navbar() {
                             <span className={`text-sm font-medium ${getRoleColor(user.role)}`}>
                               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                             </span>
-                            <span className="text-slate-500">•</span>
-                            <span className="text-slate-400 text-sm">
+                            <span className="text-slate-400">•</span>
+                            <span className="text-slate-300 text-sm font-medium">
                               ${(user.balance || 0).toLocaleString()} RLUSD
                             </span>
                           </div>
                           <div className="mt-1">
-                            <p className="text-xs text-slate-500 font-mono truncate">
+                            <p className="text-xs text-slate-400 font-mono truncate">
                               {user.pseudonymousId || user.address.slice(0, 12) + '...'}
                             </p>
                           </div>
                         </div>
                         {loading && user.address === account.currentUser?.address ? (
-                          <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <ChevronRightIcon className="h-5 w-5 text-slate-500 group-hover:text-primary-400 transition-colors" />
+                          <ChevronRightIcon className="h-5 w-5 text-slate-400 group-hover:text-primary-400 transition-colors" />
                         )}
                       </div>
                     </motion.button>
@@ -363,10 +363,10 @@ export default function Navbar() {
                 </div>
               </div>
 
-              <div className="p-4 border-t border-slate-700/50 bg-dark-900/50">
+              <div className="p-4 border-t border-slate-600/80 bg-dark-900/95">
                 <button
                   onClick={() => setShowAccountSelector(false)}
-                  className="w-full px-4 py-2 bg-slate-600/80 hover:bg-slate-600 text-white rounded-lg transition-all font-medium"
+                  className="w-full px-4 py-2 bg-slate-700/80 hover:bg-slate-600/80 text-white rounded-lg transition-all font-medium"
                 >
                   Cancel
                 </button>

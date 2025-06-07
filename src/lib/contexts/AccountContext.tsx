@@ -42,7 +42,8 @@ export interface AccountContextType {
   canAccessLender: boolean;
   getAllUsers: () => Promise<DatabaseUser[]>;
   createLoan: (loanData: any) => Promise<void>;
-  fundLoan: (loanId: string, lenderAddress: string, amount: number) => Promise<void>;
+  fundLoan: (loanId: string, lenderAddress: string, amount: number) => Promise<{ success: boolean; txHash?: string }>;
+  repayLoan: (loanId: string, borrowerSeed: string, escrowId: string, loanAmount: number) => Promise<{ success: boolean; txHash?: string; error?: string }>;
   initializeDatabase: () => Promise<void>;
 }
 
@@ -294,7 +295,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     
     const loan = {
       ...loanData,
-      id: `loan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `loan-${crypto.randomUUID()}`,
       borrowerAddress: account.currentUser.address,
       borrowerDID: account.currentUser.did,
       pseudonymousId: account.currentUser.pseudonymousId,
@@ -312,12 +313,102 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       throw new Error('Database not initialized');
     }
     
-    await database.updateLoan(loanId, {
-      status: 'FUNDED',
-      lenderAddress,
-      fundedAt: Date.now(),
-      updatedAt: Date.now(),
-    });
+    try {
+      // Get the lender's seed from demo wallets
+      const { DEMO_TESTNET_WALLETS, sendRealXRPPayment } = await import('@/lib/xrpl/client');
+      
+      const lenderWallet = Object.values(DEMO_TESTNET_WALLETS).find(
+        wallet => wallet.address === lenderAddress
+      );
+
+      if (!lenderWallet) {
+        console.error('⚠️ Lender wallet not found in demo wallets');
+        return {
+          success: false,
+          error: 'Lender wallet not found in demo wallets. Cannot send XRP transaction.'
+        };
+      }
+
+      // Send 1 XRP to Maria Santos as proof of funding
+      console.log('🚀 Sending XRP transaction for loan funding...');
+      const mariaSantosAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+      
+      const paymentResult = await sendRealXRPPayment(
+        lenderWallet.seed,
+        mariaSantosAddress,
+        '1', // 1 XRP
+        `MicroLoanX Loan Funding - Amount: $${amount} RLUSD - Loan: ${loanId} - From: ${lenderWallet.name}`
+      );
+
+      if (paymentResult.success && paymentResult.txHash) {
+        console.log('✅ XRP funding transaction successful:', paymentResult.txHash);
+        
+        // Update loan in database with XRP transaction details
+        await database.updateLoan(loanId, {
+          status: 'FUNDED',
+          lenderAddress,
+          fundedAt: Date.now(),
+          updatedAt: Date.now(),
+          txHash: paymentResult.txHash, // Store the XRP transaction hash
+          escrowId: `escrow-${Date.now()}-${crypto.randomUUID()}`, // Use crypto.randomUUID for consistency
+        });
+        
+        return { success: true, txHash: paymentResult.txHash };
+      } else {
+        console.error('❌ XRP funding transaction failed:', paymentResult.error);
+        return {
+          success: false,
+          error: paymentResult.error || 'XRP transaction failed - no transaction hash received'
+        };
+      }
+      
+    } catch (error) {
+      console.error('❌ Error funding loan:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred during loan funding'
+      };
+    }
+  };
+
+  const repayLoan = async (loanId: string, borrowerSeed: string, escrowId: string, loanAmount: number) => {
+    if (!account.databaseInitialized) {
+      throw new Error('Database not initialized');
+    }
+    
+    try {
+      // Import the real XRP repayment function
+      const { repayLoanWithXRP } = await import('@/lib/xrpl/escrow');
+      
+      // Execute the actual XRP transaction
+      const paymentResult = await repayLoanWithXRP(borrowerSeed, escrowId, loanAmount);
+      
+      if (!paymentResult.success) {
+        return {
+          success: false,
+          error: paymentResult.error || 'XRP payment failed'
+        };
+      }
+      
+      // Update loan status in database only if XRP payment succeeded
+      await database.updateLoan(loanId, {
+        status: 'REPAID',
+        repaidAt: Date.now(),
+        updatedAt: Date.now(),
+        repaymentTxHash: paymentResult.txHash,
+      });
+
+      return {
+        success: true,
+        txHash: paymentResult.txHash
+      };
+    } catch (error) {
+      console.error('Failed to repay loan:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to repay loan'
+      };
+    }
   };
 
   const contextValue: AccountContextType = {
@@ -332,6 +423,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     getAllUsers,
     createLoan,
     fundLoan,
+    repayLoan,
     initializeDatabase,
   };
 

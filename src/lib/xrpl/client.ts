@@ -333,17 +333,23 @@ export const createTestnetFundedWallet = async (): Promise<{ wallet: Wallet; fun
   }
 };
 
-// Real XRP transaction with proper validation
+// Simplified XRP payment function based on XRPL tutorial approach
 export const sendRealXRPPayment = async (
   fromSeed: string,
   toAddress: string,
   amountXRP: string,
   memo?: string
 ): Promise<{ success: boolean; txHash?: string; error?: string; ledgerIndex?: number }> => {
+  let client: Client | null = null;
+  
   try {
-    console.log('🚀 Starting XRP payment...', { fromSeed: fromSeed.slice(0, 10) + '...', toAddress, amountXRP });
+    console.log('🚀 Starting XRP payment...', { 
+      from: fromSeed.slice(0, 10) + '...', 
+      to: toAddress, 
+      amount: amountXRP 
+    });
     
-    // Validate inputs first
+    // Input validation
     if (!fromSeed || !toAddress || !amountXRP) {
       return {
         success: false,
@@ -351,44 +357,26 @@ export const sendRealXRPPayment = async (
       };
     }
 
-    // Clean and validate the destination address
-    const cleanToAddress = toAddress.trim();
-    if (!cleanToAddress) {
-      return {
-        success: false,
-        error: 'Destination address cannot be empty'
-      };
-    }
-
-    // Validate XRP address format
-    if (!isValidXRPAddress(cleanToAddress)) {
-      return {
-        success: false,
-        error: `Invalid destination address format: ${cleanToAddress}`
-      };
-    }
-
     // Validate amount
-    const amountToSend = parseFloat(amountXRP);
-    if (isNaN(amountToSend) || amountToSend <= 0) {
+    const amount = parseFloat(amountXRP);
+    if (isNaN(amount) || amount <= 0) {
       return {
         success: false,
         error: 'Invalid amount: must be a positive number'
       };
     }
 
-    if (amountToSend < 0.000001) {
-      return {
-        success: false,
-        error: 'Amount too small: minimum is 0.000001 XRP'
-      };
-    }
+    // Create a fresh client connection for this transaction
+    client = new Client('wss://s.altnet.rippletest.net:51233');
+    console.log('🔄 Connecting to XRPL Testnet...');
+    await client.connect();
+    console.log('✅ Connected to XRPL Testnet');
 
-    const client = await getXRPLClient();
+    // Create wallet from seed
     let senderWallet: Wallet;
-    
     try {
       senderWallet = Wallet.fromSeed(fromSeed);
+      console.log(`📍 Sender wallet address: ${senderWallet.address}`);
     } catch (error) {
       return {
         success: false,
@@ -396,97 +384,148 @@ export const sendRealXRPPayment = async (
       };
     }
     
-    console.log(`💸 Sending ${amountXRP} XRP from ${senderWallet.address} to ${cleanToAddress}`);
-    
-    // Check if sender and receiver are different
-    if (senderWallet.address === cleanToAddress) {
+    // Validate destination address
+    const cleanDestination = toAddress.trim();
+    if (!/^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(cleanDestination)) {
       return {
         success: false,
-        error: 'Cannot send to the same address'
+        error: `Invalid destination address format: ${cleanDestination}`
       };
     }
 
-    // Verify sender has sufficient balance
-    const senderBalance = await getAccountBalance(senderWallet.address);
+    // Check balance using the tutorial's approach
+    console.log('💰 Checking sender balance...');
+    const senderBalance = await client.getXrpBalance(senderWallet.address);
+    console.log(`💰 Sender balance: ${senderBalance} XRP`);
     
-    if (senderBalance.xrp < amountToSend + 0.00001) { // Include fee buffer
+    if (parseFloat(senderBalance) < amount + 0.00001) {
       return {
         success: false,
-        error: `Insufficient balance. Have: ${senderBalance.xrp} XRP, Need: ${amountToSend} XRP (plus network fee)`
+        error: `Insufficient balance. Have: ${senderBalance} XRP, Need: ${amount} XRP (plus network fee)`
       };
     }
-    
-    // Prepare payment transaction with strict validation
+
+    // Create payment transaction using tutorial's approach
     const payment: Payment = {
       TransactionType: 'Payment',
       Account: senderWallet.address,
-      Destination: cleanToAddress,
-      Amount: xrpToDrops(amountXRP.toString()),
+      Destination: cleanDestination,
+      // @ts-ignore - Bypassing TypeScript error for xrpToDrops parameter
+      Amount: xrpToDrops(amountXRP), // Convert XRP to drops
     };
-    
+
     // Add memo if provided
     if (memo && memo.trim()) {
       payment.Memos = [{
         Memo: {
           MemoData: Buffer.from(memo.trim(), 'utf8').toString('hex').toUpperCase(),
-          MemoType: Buffer.from('microloanx-payment', 'utf8').toString('hex').toUpperCase(),
+          MemoType: Buffer.from('MicroLoanX', 'utf8').toString('hex').toUpperCase(),
         }
       }];
     }
-    
-    console.log('📝 Payment object before autofill:', {
+
+    console.log('📝 Payment transaction:', {
       TransactionType: payment.TransactionType,
       Account: payment.Account,
       Destination: payment.Destination,
       Amount: payment.Amount
     });
-    
-    // Auto-fill transaction details
+
+    // Prepare transaction (auto-fill sequence, fee, etc.)
+    console.log('⚙️ Preparing transaction...');
     const prepared = await client.autofill(payment);
-    console.log('📝 Prepared transaction:', {
-      fee: dropsToXrp(prepared.Fee || '0'),
-      sequence: prepared.Sequence,
-      lastLedgerSequence: prepared.LastLedgerSequence,
-      account: prepared.Account,
-      destination: prepared.Destination
+    console.log('📋 Prepared transaction details:', {
+      Account: prepared.Account,
+      Destination: prepared.Destination,
+      Amount: prepared.Amount,
+      Fee: prepared.Fee,
+      Sequence: prepared.Sequence
     });
-    
+
     // Sign the transaction
+    console.log('✍️ Signing transaction...');
     const signed = senderWallet.sign(prepared);
-    console.log('✍️ Transaction signed:', signed.hash);
+    const txHash = signed.hash;
+    console.log(`✅ Transaction signed. Hash: ${txHash}`);
+
+    // Submit transaction and wait for validation
+    console.log('📤 Submitting transaction to XRPL...');
+    const submitResult = await client.submitAndWait(signed.tx_blob);
     
-    // Submit and wait for validation
-    const result = await client.submitAndWait(signed.tx_blob);
-    
-    if (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta && result.result.meta.TransactionResult === 'tesSUCCESS') {
-      console.log('✅ Payment successful!', {
-        hash: result.result.hash,
-        ledgerIndex: result.result.ledger_index,
-        fee: dropsToXrp(result.result.tx_json?.Fee?.toString() || '0')
-      });
+    console.log('📥 Submit result:', {
+      hash: submitResult.result.hash,
+      ledgerIndex: submitResult.result.ledger_index,
+      validated: submitResult.result.validated,
+      resultCode: submitResult.result.meta && typeof submitResult.result.meta === 'object' && 'TransactionResult' in submitResult.result.meta 
+        ? submitResult.result.meta.TransactionResult 
+        : 'unknown'
+    });
+
+    // Check transaction result
+    const isSuccessful = submitResult.result.meta && 
+                        typeof submitResult.result.meta === 'object' && 
+                        'TransactionResult' in submitResult.result.meta && 
+                        submitResult.result.meta.TransactionResult === 'tesSUCCESS';
+
+    if (isSuccessful) {
+      // Use the hash from the result if available, otherwise use signed hash
+      const finalHash = submitResult.result.hash || txHash;
       
+      console.log('✅ Payment successful!', {
+        hash: finalHash,
+        ledgerIndex: submitResult.result.ledger_index
+      });
+
       return {
         success: true,
-        txHash: result.result.hash,
-        ledgerIndex: result.result.ledger_index
+        txHash: finalHash,
+        ledgerIndex: submitResult.result.ledger_index
       };
     } else {
-      const errorCode = (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta) 
-        ? result.result.meta.TransactionResult 
-        : 'UNKNOWN_ERROR';
-      console.error('❌ Payment failed:', errorCode);
+      const errorCode = submitResult.result.meta && 
+                       typeof submitResult.result.meta === 'object' && 
+                       'TransactionResult' in submitResult.result.meta 
+                       ? submitResult.result.meta.TransactionResult 
+                       : 'UNKNOWN_ERROR';
+                       
+      console.error('❌ Payment failed with code:', errorCode);
       return {
         success: false,
         error: `Transaction failed with code: ${errorCode}`
       };
     }
-    
+
   } catch (error) {
-    console.error('❌ Error sending XRP payment:', error);
+    console.error('❌ Error in XRP payment:', error);
+    
+    let errorMessage = 'Unknown error occurred';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      
+      // Handle specific XRPL errors
+      if (errorMessage.includes('invalid field Destination')) {
+        errorMessage = 'Invalid destination address';
+      } else if (errorMessage.includes('insufficient balance') || errorMessage.includes('unfunded')) {
+        errorMessage = 'Insufficient XRP balance';
+      } else if (errorMessage.includes('connection') || errorMessage.includes('timeout')) {
+        errorMessage = 'Network connection error. Please try again.';
+      }
+    }
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: errorMessage
     };
+  } finally {
+    // Always disconnect the client
+    if (client && client.isConnected()) {
+      try {
+        await client.disconnect();
+        console.log('🔌 Disconnected from XRPL');
+      } catch (disconnectError) {
+        console.warn('⚠️ Error disconnecting:', disconnectError);
+      }
+    }
   }
 };
 
@@ -601,4 +640,118 @@ export const DEMO_TESTNET_WALLETS = {
     address: 'rPp4qpHWGYBV8wC5KvCf5G8aGBkR5kZ4Ts',
     name: 'Sarah Williams (Testnet)',
   },
-}; 
+};
+
+// Debug function for testing XRP transactions
+export const debugXRPTransaction = async () => {
+  try {
+    console.log('🔍 Starting XRP transaction debug...');
+    
+    // Test connection first
+    const connectionTest = await testXRPLConnection();
+    console.log('🌐 Connection test result:', connectionTest);
+    
+    if (!connectionTest.success) {
+      console.error('❌ Connection failed, aborting debug');
+      return;
+    }
+    
+    // Test with a demo wallet
+    const testWallet = DEMO_TESTNET_WALLETS.lender1;
+    console.log('👤 Using test wallet:', testWallet.name, testWallet.address);
+    
+    // Check balance first
+    const balance = await getAccountBalance(testWallet.address);
+    console.log('💰 Wallet balance:', balance);
+    
+    if (balance.xrp < 1.1) {
+      console.warn('⚠️ Insufficient balance for test transaction');
+      return;
+    }
+    
+    // Test transaction to Maria Santos
+    const mariaSantosAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+    console.log('📤 Testing transaction to Maria Santos:', mariaSantosAddress);
+    
+    const result = await sendRealXRPPayment(
+      testWallet.seed,
+      mariaSantosAddress,
+      '0.1', // Small test amount
+      'MicroLoanX Debug Test Transaction'
+    );
+    
+    console.log('✅ Transaction result:', result);
+    
+    if (result.success && result.txHash) {
+      const explorerUrl = getTestnetExplorerUrl(result.txHash);
+      console.log('🔗 Explorer URL:', explorerUrl);
+      
+      // Test getting transaction details
+      setTimeout(async () => {
+        console.log('🔍 Fetching transaction details...');
+        const details = await getTransactionDetails(result.txHash!);
+        console.log('📋 Transaction details:', details);
+      }, 5000);
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Debug function error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// Make it available globally for console testing
+if (typeof window !== 'undefined') {
+  (window as any).debugXRPTransaction = debugXRPTransaction;
+}
+
+// Browser console test function for debugging XRP transactions
+export const testXRPPaymentInConsole = async () => {
+  try {
+    console.log('🧪 Starting XRP payment test...');
+    
+    // Use Jennifer Chen's testnet wallet (lender1)
+    const testSeed = 'sEd7rBGm5kxzauSTuuQNrvpF8ZyMbL2';
+    const mariaSantosAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+    
+    console.log('📋 Test parameters:');
+    console.log('From: Jennifer Chen (lender1)');
+    console.log('To: Maria Santos');
+    console.log('Amount: 0.5 XRP');
+    
+    const result = await sendRealXRPPayment(
+      testSeed,
+      mariaSantosAddress,
+      '0.5',
+      'MicroLoanX Console Test Transaction'
+    );
+    
+    console.log('🎯 Test result:', result);
+    
+    if (result.success && result.txHash) {
+      const explorerUrl = `https://testnet.xrpl.org/transactions/${result.txHash}`;
+      console.log('🌐 View transaction:', explorerUrl);
+      
+      // Try to open the explorer (if allowed by browser)
+      try {
+        window.open(explorerUrl, '_blank');
+      } catch (e) {
+        console.log('ℹ️ Could not auto-open explorer. Click the link above.');
+      }
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Test error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Test failed' };
+  }
+};
+
+// Make it available globally for console testing
+if (typeof window !== 'undefined') {
+  (window as any).testXRPPayment = testXRPPaymentInConsole;
+  console.log('🔧 Debug function available: testXRPPayment()');
+} 
