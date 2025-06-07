@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { 
   BeakerIcon,
   WifiIcon,
@@ -10,7 +11,9 @@ import {
   CurrencyDollarIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ArrowTopRightOnSquareIcon
+  ArrowTopRightOnSquareIcon,
+  ArrowLeftIcon,
+  HomeIcon
 } from '@heroicons/react/24/outline';
 import { 
   testXRPLConnection, 
@@ -21,17 +24,52 @@ import {
 } from '@/lib/xrpl/client';
 
 export default function TestnetPage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950 relative">
       <div className="container-responsive section-spacing">
+        {/* Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-8"
+        >
+          <motion.button
+            onClick={() => router.push('/')}
+            className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-dark-700/50 border border-slate-600/40 text-slate-300 hover:text-white hover:bg-dark-600/60 transition-all duration-300"
+            whileHover={{ scale: 1.05, x: -2 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+            <span className="font-medium">Back to Dashboard</span>
+          </motion.button>
+
+          <motion.button
+            onClick={() => router.push('/')}
+            className="flex items-center space-x-2 px-4 py-3 rounded-xl bg-gradient-to-r from-secondary-600/20 to-primary-600/20 border border-secondary-400/30 text-secondary-300 hover:text-secondary-200 transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <HomeIcon className="h-5 w-5" />
+            <span className="font-medium">Home</span>
+          </motion.button>
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           className="text-center mb-12"
         >
           <div className="flex items-center justify-center mb-6">
-            <BeakerIcon className="h-16 w-16 text-accent-400 mr-4" />
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            >
+              <BeakerIcon className="h-16 w-16 text-accent-400 mr-4" />
+            </motion.div>
             <div>
               <h1 className="text-responsive-3xl gradient-text-premium">XRPL Testnet Laboratory</h1>
               <p className="text-responsive-lg text-slate-300 mt-2">
@@ -58,7 +96,7 @@ export default function TestnetPage() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.2 }}
             className="space-y-6"
           >
             {/* XRPL Connection Status */}
@@ -73,7 +111,7 @@ export default function TestnetPage() {
                 </div>
               </div>
               
-              <button
+              <motion.button
                 onClick={async () => {
                   const result = await testXRPLConnection();
                   if (result.success) {
@@ -83,10 +121,12 @@ export default function TestnetPage() {
                   }
                 }}
                 className="btn-primary w-full"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <WifiIcon className="h-5 w-5 mr-2" />
                 Test Connection
-              </button>
+              </motion.button>
             </div>
 
             {/* Create New Testnet Wallet */}
@@ -101,7 +141,7 @@ export default function TestnetPage() {
                 </div>
               </div>
               
-              <button
+              <motion.button
                 onClick={async () => {
                   try {
                     const result = await createTestnetFundedWallet();
@@ -114,10 +154,12 @@ export default function TestnetPage() {
                   }
                 }}
                 className="btn-secondary w-full"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <WalletIcon className="h-5 w-5 mr-2" />
                 Create & Fund Wallet
-              </button>
+              </motion.button>
             </div>
 
             {/* Check Account Balance */}
@@ -139,7 +181,7 @@ export default function TestnetPage() {
                   className="input-primary"
                   id="balanceAddress"
                 />
-                <button
+                <motion.button
                   onClick={async () => {
                     const address = (document.getElementById('balanceAddress') as HTMLInputElement)?.value;
                     
@@ -164,10 +206,12 @@ export default function TestnetPage() {
                     }
                   }}
                   className="btn-accent w-full"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <CurrencyDollarIcon className="h-5 w-5 mr-2" />
                   Check Balance
-                </button>
+                </motion.button>
               </div>
             </div>
           </motion.div>
@@ -176,7 +220,7 @@ export default function TestnetPage() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
           >
             <div className="glass-card h-full">
               <div className="flex items-center space-x-3 mb-6">
@@ -191,7 +235,7 @@ export default function TestnetPage() {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
                     Destination Address
                   </label>
                   <input
@@ -233,7 +277,7 @@ export default function TestnetPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
                     Amount (XRP)
                   </label>
                   <input
@@ -245,13 +289,13 @@ export default function TestnetPage() {
                     className="input-primary"
                     id="xrpAmount"
                   />
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-400">
                     Min: 0.000001 XRP, Max: 1000 XRP
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
                     Memo (Optional)
                   </label>
                   <input
@@ -263,7 +307,7 @@ export default function TestnetPage() {
                   />
                 </div>
 
-                <button
+                <motion.button
                   onClick={async () => {
                     const toAddressInput = document.getElementById('toAddress') as HTMLInputElement;
                     const amountInput = document.getElementById('xrpAmount') as HTMLInputElement;
@@ -332,10 +376,12 @@ export default function TestnetPage() {
                     }
                   }}
                   className="btn-warning w-full py-3"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <BanknotesIcon className="h-5 w-5 mr-2" />
                   Send XRP Payment
-                </button>
+                </motion.button>
               </div>
             </div>
           </motion.div>
@@ -345,7 +391,7 @@ export default function TestnetPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
           className="mt-12"
         >
           <div className="glass-card">
@@ -356,11 +402,22 @@ export default function TestnetPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Object.entries(DEMO_TESTNET_WALLETS).map(([key, wallet]) => (
-                <div key={key} className="bg-dark-800/50 rounded-lg p-4 border border-slate-600/30">
+                <motion.div 
+                  key={key} 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + Object.keys(DEMO_TESTNET_WALLETS).indexOf(key) * 0.1 }}
+                  className="bg-dark-800/50 rounded-lg p-4 border border-slate-600/30 hover-lift"
+                  whileHover={{ scale: 1.02 }}
+                >
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-secondary-500 to-primary-500 rounded-full flex items-center justify-center">
+                    <div className={`w-8 h-8 bg-gradient-to-br ${
+                      key.includes('borrower') ? 'from-secondary-500 to-primary-500' :
+                      key.includes('lender') ? 'from-success-500 to-accent-500' :
+                      'from-accent-500 to-warning-500'
+                    } rounded-full flex items-center justify-center`}>
                       <span className="text-white font-bold text-sm">
-                        {wallet.name.charAt(0)}
+                        {wallet.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
@@ -371,31 +428,33 @@ export default function TestnetPage() {
                   
                   <div className="space-y-2">
                     <div>
-                      <p className="text-xs text-slate-400 mb-1">Address:</p>
+                      <p className="text-xs text-slate-300 mb-1 font-medium">Address:</p>
                       <div className="flex items-center space-x-2">
-                        <code className="text-xs bg-dark-700/50 rounded px-2 py-1 text-slate-300 flex-1 truncate">
+                        <code className="text-xs bg-slate-100/90 text-slate-800 rounded px-2 py-1 flex-1 truncate font-mono">
                           {wallet.address}
                         </code>
-                        <button
+                        <motion.button
                           onClick={() => {
                             navigator.clipboard.writeText(wallet.address);
                             alert('Address copied to clipboard!');
                           }}
                           className="text-primary-400 hover:text-primary-300 transition-colors"
                           title="Copy address"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                         >
                           📋
-                        </button>
+                        </motion.button>
                       </div>
                     </div>
                     
                     <div>
-                      <p className="text-xs text-slate-400 mb-1">Seed (Secret):</p>
+                      <p className="text-xs text-slate-300 mb-1 font-medium">Seed (Secret):</p>
                       <div className="flex items-center space-x-2">
-                        <code className="text-xs bg-dark-700/50 rounded px-2 py-1 text-slate-300 flex-1 truncate">
+                        <code className="text-xs bg-slate-100/90 text-slate-800 rounded px-2 py-1 flex-1 truncate font-mono">
                           {wallet.seed.slice(0, 8)}...
                         </code>
-                        <button
+                        <motion.button
                           onClick={() => {
                             if (confirm('⚠️ Copying wallet seed to clipboard. This is sensitive information - only use in testnet!')) {
                               navigator.clipboard.writeText(wallet.seed);
@@ -404,13 +463,15 @@ export default function TestnetPage() {
                           }}
                           className="text-warning-400 hover:text-warning-300 transition-colors"
                           title="Copy seed (use caution)"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                         >
                           🔐
-                        </button>
+                        </motion.button>
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
             
