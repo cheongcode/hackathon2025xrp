@@ -4,17 +4,48 @@
 
 MicroLoanX is a revolutionary lending platform built on the XRP Ledger that connects unbanked borrowers with global lenders through pseudonymous, reputation-based microloans. Built for the Ripple x EasyA Singapore Hackathon, this platform demonstrates how blockchain technology can solve real-world financial inclusion challenges.
 
+<img width="1512" alt="Screenshot 2025-06-08 at 8 56 41 AM" src="https://github.com/user-attachments/assets/9d316b28-d203-442e-bdac-6f07f4ed9a31" />
+
+<img width="1512" alt="Screenshot 2025-06-08 at 8 57 06 AM" src="https://github.com/user-attachments/assets/aea498cf-6b87-4b03-9d15-7cbd4afa97af" />
+
+
+<img width="1512" alt="Screenshot 2025-06-08 at 8 57 52 AM" src="https://github.com/user-attachments/assets/30e11348-75e2-4f07-873f-2adc69f47ea6" />
+
+<img width="1512" alt="Screenshot 2025-06-08 at 8 58 40 AM" src="https://github.com/user-attachments/assets/f12bb042-0d68-43c0-a431-5981a11a61d1" />
+
+<img width="1489" alt="Screenshot 2025-06-08 at 11 23 05 AM" src="https://github.com/user-attachments/assets/056e52de-cb26-4063-ad21-02ef06a08aa5" />
+
+
+<img width="1485" alt="Screenshot 2025-06-08 at 11 25 04 AM" src="https://github.com/user-attachments/assets/25253f30-ec0f-4da9-a9e0-23456e2ecd61" />
+
+<img width="1464" alt="Screenshot 2025-06-08 at 11 25 17 AM" src="https://github.com/user-attachments/assets/6d4fa096-f29a-4e9b-bc6b-3370c25d6d01" />
+
+<img width="1445" alt="Screenshot 2025-06-08 at 11 25 32 AM" src="https://github.com/user-attachments/assets/95613edc-ed20-4b7e-85a7-9634bebdd152" />
+
+
+<img width="1459" alt="Screenshot 2025-06-08 at 11 25 43 AM" src="https://github.com/user-attachments/assets/8dc101d0-65d2-48c6-9dc6-472613c0af8e" />
+
+
+<img width="1448" alt="Screenshot 2025-06-08 at 11 25 51 AM" src="https://github.com/user-attachments/assets/17514cb0-a811-4cca-af23-82ba40670e00" />
+
+<img width="1502" alt="Screenshot 2025-06-08 at 11 26 05 AM" src="https://github.com/user-attachments/assets/aa8fd1da-de91-4673-960d-ec4a7756abbf" />
+
+
+<img width="1495" alt="Screenshot 2025-06-08 at 11 26 23 AM" src="https://github.com/user-attachments/assets/ab6cda11-1790-4d94-986a-3b84f35fe1a2" />
+
+
+<img width="567" alt="Screenshot 2025-06-08 at 11 26 31 AM" src="https://github.com/user-attachments/assets/3b0d01c4-56aa-4d6a-bdae-dad56070fc9e" />
 
 
 
-
-<img width="1482" alt="Screenshot 2025-06-08 at 11 27 07 AM" src="https://github.com/user-attachments/assets/06de053f-9c84-4493-b057-dc39401f2d43" />
-
-
-<img width="1481" alt="Screenshot 2025-06-08 at 11 28 04 AM" src="https://github.com/user-attachments/assets/d98b1c1b-36c6-4e51-ada5-e7887fd56c38" />
+<img width="1481" alt="Screenshot 2025-06-08 at 11 26 48 AM" src="https://github.com/user-attachments/assets/c96db6a4-c54f-46bf-92f3-8e3908792e13" />
 
 
-<img width="1512" alt="Screenshot 2025-06-08 at 8 56 41 AM" src="https://github.com/user-attachments/assets/b5d706a4-e006-43a7-b905-7b2242eda643" />
+<img width="1469" alt="Screenshot 2025-06-08 at 11 26 57 AM" src="https://github.com/user-attachments/assets/30015ba9-9aac-4068-b3ca-48449d0d7c98" />
+
+
+
+<img width="1481" alt="Screenshot 2025-06-08 at 11 28 04 AM" src="https://github.com/user-attachments/assets/0d86e5a8-2f38-48d8-af51-dac51a5ed8ef" />
 
 
 
@@ -214,6 +245,10 @@ npx tsc --noEmit
 - `src/lib/contexts/AccountContext.tsx` - Global state management
 - `src/components/borrower/EnhancedBorrowerView.tsx` - Borrower interface
 - `src/components/lender/EnhancedLenderView.tsx` - Lender interface
+
+## Video Demonstration
+https://youtu.be/cS2ByRk722U
+
 
 ## Troubleshooting
 
