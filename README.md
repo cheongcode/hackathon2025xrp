@@ -1,4 +1,5 @@
 # MicroLoanX
+🎉 3rd Place Winner at EasyA x Ripple Apex Hackathon (XRP Ledger Track)
 
 **Decentralized Microloan Platform for Financial Inclusion**
 
