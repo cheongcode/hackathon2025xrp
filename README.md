@@ -315,3 +315,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 **Experience the future of inclusive finance - start by selecting a test account and exploring decentralized microloans powered by the XRP Ledger.**
+
+---
+
+Presentation slides : https://www.canva.com/design/DAGpptDxMJ0/PL_4naT3VGxGMMhm3XxQ1A/edit?ui=eyJBIjp7fX0
+
+Transaction link : https://testnet.xrpl.org/transactions/TX45678901234567890123DEF456789012345678901
+
