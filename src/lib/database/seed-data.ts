@@ -144,11 +144,11 @@ export const TEST_ACCOUNTS: DatabaseUser[] = [
   },
   {
     address: 'rGHXgzacLvRGLbkfDhJcpzoV2RPsFZDFuS',
-    name: 'lonshrk',
+    name: 'Ashton Hall',
     role: 'lender',
     balance: 25000,
     did: 'did:xrpl:V8H9I0J1:1704157900000',
-    pseudonymousId: 'LENDER-lonshrk',
+    pseudonymousId: 'LENDER-ASHTON',
     createdAt: Date.now() - 86400000 * 75,
     lastActive: Date.now() - 3600000,
     preferences: {
