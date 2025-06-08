@@ -1,315 +1,317 @@
-# MicroLoanX 🚀
+# MicroLoanX
 
-**Decentralized, Pseudonymous Microloan Platform for Financial Inclusion**
+**Decentralized Microloan Platform for Financial Inclusion**
 
-Built for the **Ripple x EasyA Singapore Hackathon** - Empowering unbanked entrepreneurs and privacy-conscious borrowers through the XRP Ledger.
+MicroLoanX is a revolutionary lending platform built on the XRP Ledger that connects unbanked borrowers with global lenders through pseudonymous, reputation-based microloans. Built for the Ripple x EasyA Singapore Hackathon, this platform demonstrates how blockchain technology can solve real-world financial inclusion challenges.
 
-![MicroLoanX Banner](https://images.unsplash.com/photo-1559526324-4b87b5e36e44?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=400&q=80)
+## What MicroLoanX Solves
 
-## 🌟 **Overview**
+Financial exclusion affects over 1.7 billion people worldwide who lack access to traditional banking services. MicroLoanX addresses this by:
 
-MicroLoanX is a revolutionary decentralized microloan platform that bridges the gap between unbanked borrowers and global lenders. Using XRP Ledger's escrow functionality and RLUSD, we enable **private, reputation-based microloans** where borrowers maintain anonymity through Decentralized Identifiers (DIDs) while building verifiable trust scores.
+- **Eliminating KYC barriers** while maintaining trust through decentralized identity
+- **Enabling cross-border lending** with instant settlements via RLUSD
+- **Building reputation without revealing identity** through pseudonymous profiles
+- **Providing automated escrow protection** using XRP Ledger's native functionality
+- **Reducing lending costs** through blockchain efficiency
 
-## 🚀 **Quick Start**
+## Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
+
+- Node.js 18 or higher
+- npm package manager
 - Git
 
-### Installation & Setup
+### Installation
 
-1. **Clone the repository**
+1. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/hackathon2025xrp.git
 cd hackathon2025xrp
 ```
 
-2. **Install dependencies**
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. **Start the development server**
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-4. **Open in browser**
-Navigate to [http://localhost:3000](http://localhost:3000)
+4. Open your browser to [http://localhost:3000](http://localhost:3000)
 
-### 🔑 **Demo Login Credentials**
+### Using the Demo
 
-The application automatically initializes with test data. Click "Select Test Account" to choose from pre-configured demo accounts:
+The application comes pre-loaded with test accounts. Click "Select Test Account" to choose from:
 
-#### **Borrower Accounts**
-| Name | Role | Balance | Trust Score | Specialization |
-|------|------|---------|-------------|----------------|
-| **Maria Santos** | Borrower | $5,000 RLUSD | 92/100 | Agriculture |
-| **Ahmed Hassan** | Borrower | $3,200 RLUSD | 88/100 | Healthcare & Business |
-| **Priya Sharma** | Borrower | $2,800 RLUSD | 76/100 | Education |
-| **Carlos Rodriguez** | Borrower | $1,500 RLUSD | 68/100 | General |
+**Borrower Accounts:**
+- **Maria Santos** - Agriculture specialist with 92/100 trust score
+- **Ahmed Hassan** - Healthcare & business loans, 88/100 trust score  
+- **Priya Sharma** - Education loans, 76/100 trust score
+- **Carlos Rodriguez** - General loans, 68/100 trust score
 
-#### **Lender Accounts**
-| Name | Role | Balance | Risk Tolerance | Auto-Funding |
-|------|------|---------|----------------|--------------|
-| **Jennifer Chen** | Lender | $50,000 RLUSD | Low Risk | Enabled |
-| **Michael Thompson** | Lender | $75,000 RLUSD | Medium Risk | Disabled |
-| **Sarah Williams** | Lender | $100,000 RLUSD | High Risk | Enabled |
-| **David Kim** | Lender | $25,000 RLUSD | Low Risk | Disabled |
+**Lender Accounts:**
+- **Jennifer Chen** - $50,000 available, low risk tolerance
+- **Michael Thompson** - $75,000 available, medium risk tolerance
+- **Sarah Williams** - $100,000 available, high risk tolerance
+- **Ashton Hall** - $25,000 available, low risk tolerance
 
-### 🎮 **How to Use**
+### How It Works
 
-1. **Select Account**: Click "Select Test Account" and choose a user
-2. **Switch Views**: Toggle between Borrower and Lender dashboards
-3. **Create Loans** (Borrowers): Submit loan requests with purpose and amount
-4. **Fund Loans** (Lenders): Browse and fund available loan opportunities
-5. **Track Progress**: Monitor loan status and reputation scores
+1. **Select an account** from the demo accounts
+2. **Switch between views** - borrower or lender dashboard
+3. **Create loan requests** (borrowers) with purpose and amount
+4. **Browse and fund loans** (lenders) based on risk assessment
+5. **Track transactions** on the XRP Ledger testnet
 
-## ✅ **Current Features (Working)**
+## Core Features
 
-### 🏦 **For Borrowers**
-- ✅ **Anonymous Profile Creation**: DID-based pseudonymous identities
-- ✅ **Smart Loan Requests**: Create requests with purpose tags
-- ✅ **Dynamic Interest Rates**: Trust score affects rates
-- ✅ **Reputation Building**: Track successful repayments
-- ✅ **Portfolio Dashboard**: View active and past loans
+### For Borrowers
 
-### 💰 **For Lenders**
-- ✅ **De-identified Profiles**: View borrower reputation without personal data
-- ✅ **Risk Assessment**: See trust scores and repayment history
-- ✅ **Portfolio Dashboard**: Track all funded loans
-- ✅ **Transaction History**: Complete audit trail
-- ✅ **User Switching**: Test different lender profiles
+- **Pseudonymous profiles** using Decentralized Identifiers (DIDs)
+- **Dynamic interest rates** based on reputation score
+- **Categorical expertise** tracking (agriculture, healthcare, education, business)
+- **Loan request system** with purpose tagging
+- **Reputation building** through successful repayments
 
-### 🔐 **Privacy & Security**
-- ✅ **Pseudonymous IDs**: Cryptographic identity protection
-- ✅ **DID Integration**: Mock decentralized identity system
-- ✅ **Encrypted Metadata**: Secure loan data storage
-- ✅ **Local Database**: IndexedDB for demo data persistence
+### For Lenders
 
-### 📊 **Reputation System**
-- ✅ **Multi-dimensional Scoring**: Category-based trust scores
-- ✅ **Verification Levels**: Unverified → Basic → Enhanced
-- ✅ **Historical Tracking**: Complete repayment history
-- ✅ **Dynamic Updates**: Real-time score calculations
+- **Risk assessment tools** with borrower trust scores
+- **Portfolio management** dashboard
+- **Real-time transaction tracking** on XRP Ledger
+- **Automated loan matching** based on risk preferences
+- **Complete audit trail** of all lending activity
 
-## 🔧 **XRPL Integration Status**
+### Privacy & Security
 
-### ✅ **Implemented**
-- XRPL Testnet connection
-- Wallet generation and management
-- Account balance checking
-- Basic payment functionality
-- Transaction history tracking
-- Testnet explorer integration
+- **Pseudonymous lending** - no personal information required
+- **Decentralized identity** through mock DID implementation
+- **XRPL escrow protection** for all transactions
+- **Local data persistence** using IndexedDB
+- **Transparent reputation system** without revealing identity
 
-### 🚧 **In Progress**
-- RLUSD trust line setup
-- Escrow contract implementation
-- Automated loan funding
-- Real-time balance updates
+## Technology Stack
 
-### 📋 **To Implement**
-- Mainnet deployment
-- Production escrow contracts
-- IPFS metadata storage
-- Real DID integration
+### Frontend
+- **Next.js 15** with App Router
+- **TypeScript** for type safety
+- **Tailwind CSS** with custom glass morphism design
+- **Framer Motion** for smooth animations
+- **Headless UI** for accessible components
 
-## 🛠 **Technology Stack**
+### Blockchain Integration
+- **XRP Ledger** for transaction processing
+- **RLUSD** (Ripple USD stablecoin) for stable value
+- **xrpl.js v4.2.5** SDK for blockchain interaction
+- **XRPL Testnet** for development and demo
 
-- **Frontend**: Next.js 15 with TypeScript
-- **Styling**: Tailwind CSS with custom glass morphism design
-- **Animations**: Framer Motion for smooth interactions
-- **Blockchain**: XRP Ledger (XRPL) with xrpl.js SDK
-- **Currency**: RLUSD (Ripple USD stablecoin)
-- **Database**: IndexedDB for local data persistence
-- **Identity**: Mock DID implementation for demo
-- **State Management**: React Context with TypeScript
+### Data & State Management
+- **IndexedDB** for local data persistence
+- **React Context** for state management
+- **Mock DID system** for pseudonymous identity
 
-## 🏗 **Architecture**
-
-### **Core Components**
+## Architecture
 
 ```
 src/
-├── app/                    # Next.js 13+ app directory
-│   ├── page.tsx           # Main dashboard with user switching
-│   ├── layout.tsx         # Root layout with animations
-│   └── globals.css        # Tailwind styles + custom theme
+├── app/                    # Next.js App Router
+│   ├── page.tsx           # Main dashboard
+│   ├── layout.tsx         # Root layout
+│   └── globals.css        # Global styles
 ├── components/
-│   ├── borrower/          # Borrower-specific components
-│   │   └── EnhancedBorrowerView.tsx
-│   ├── lender/            # Lender-specific components
-│   │   └── EnhancedLenderView.tsx
-│   └── layout/            # Navigation and layout
-│       └── Navbar.tsx
+│   ├── borrower/          # Borrower interface
+│   ├── lender/            # Lender interface
+│   ├── layout/            # Navigation components
+│   └── ui/                # Reusable UI components
 ├── lib/
 │   ├── contexts/          # React Context providers
-│   │   └── AccountContext.tsx
-│   ├── database/          # IndexedDB management
-│   │   ├── db.ts          # Database operations
-│   │   └── seed-data.ts   # Test data seeding
-│   └── xrpl/              # XRPL integration layer
-│       ├── client.ts      # Basic XRPL connection
-│       ├── enhanced-client.ts # Advanced XRPL features
-│       └── escrow.ts      # Escrow management
+│   ├── database/          # IndexedDB operations
+│   └── xrpl/              # XRP Ledger integration
 └── types/
-    └── index.ts           # TypeScript type definitions
+    └── index.ts           # TypeScript definitions
 ```
 
-## 🔗 **XRPL Integration**
+## XRP Ledger Integration
 
-### **Testnet Configuration**
+### Network Configuration
 - **Network**: XRPL Testnet (`wss://s.altnet.rippletest.net:51233`)
-- **Currency**: RLUSD (Ripple USD)
+- **Currency**: RLUSD (Ripple USD stablecoin)
 - **Explorer**: [XRPL Testnet Explorer](https://testnet.xrpl.org)
 
-### **Demo Wallets** (Testnet Only)
-```
-Borrowers:
-- Maya Patel: rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh
-- Ahmed Hassan: rUn84CJowRBX4T9w7qjpDC8BreMnqZNYhh
+### Key XRPL Features Used
 
-Lenders:
-- Sarah Chen: rDdECVmwpkRo8FtY3ywCYhHX8VfuSAqghj
-- Michael Torres: rPp4qpHWGYBV8wC5KvCf5G8aGBkR5kZ4Ts
-```
+1. **Native Escrow Objects** - Trustless loan agreements with time-based or conditional release
+2. **RLUSD Stablecoin** - Stable value lending without cryptocurrency volatility
+3. **Trust Lines** - Multi-currency support within the XRP ecosystem
+4. **Memo Fields** - On-chain metadata for loan transparency
+5. **Instant Settlement** - 3-4 second transaction finality
 
-## 🎨 **Design System**
+### Current Implementation Status
 
-### **Color Palette**
-- **Primary**: Blue (#3B82F6) for trust and reliability
-- **Secondary**: Teal (#14B8A6) for growth and stability
-- **Success**: Green (#10B981) for positive states
-- **Accent**: Orange (#F59E0B) for calls-to-action
-- **Warning**: Yellow (#EAB308) for pending states
-- **Error**: Red (#EF4444) for negative states
+**Working Features:**
+- XRPL Testnet connectivity
+- Real XRP transactions for loan funding/repayment
+- Account balance checking with RLUSD support
+- Transaction history tracking
+- Testnet explorer integration
 
-### **UI/UX Features**
-- **Glass Morphism**: Modern frosted glass effects
-- **Micro-interactions**: Smooth Framer Motion animations
-- **Dark Theme**: Optimized for extended usage
-- **Responsive Design**: Mobile-first approach
-- **Accessibility**: High contrast ratios and semantic HTML
+**In Development:**
+- Full RLUSD trust line implementation
+- Production escrow contracts
+- Automated loan lifecycle management
+- Enhanced reputation algorithms
 
-## 🐛 **Known Issues & Limitations**
+## Development
 
-### **Current Limitations**
-1. **Mock Data**: Uses simulated blockchain transactions
-2. **Local Storage**: Data resets on browser clear
-3. **Single Session**: No persistent authentication
-4. **Testnet Only**: Not connected to mainnet
+### Available Scripts
 
-### **Planned Fixes**
-1. Real XRPL escrow integration
-2. Persistent user sessions
-3. IPFS metadata storage
-4. Production-ready security
-
-## 📈 **Roadmap**
-
-### **Phase 1: MVP (Current)**
-- ✅ Basic borrower/lender interface
-- ✅ Mock DID integration
-- ✅ Reputation system
-- ✅ RLUSD support
-- ✅ XRPL testnet connection
-
-### **Phase 2: Enhanced Features**
-- 🔄 Real XRPL escrow integration
-- 🔄 IPFS metadata storage
-- 🔄 Advanced reputation algorithms
-- 🔄 Multi-currency support
-- 🔄 Lending pools
-
-### **Phase 3: Production Ready**
-- ⏳ Mainnet deployment
-- ⏳ Real DID integration
-- ⏳ Regulatory compliance
-- ⏳ Mobile app
-- ⏳ Partnership integrations
-
-## 🤝 **Contributing**
-
-### **Development Setup**
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
+# Development server with Turbopack
 npm run dev
 
-# Build for production
+# Production build
 npm run build
 
-# Run linter
+# Start production server
+npm start
+
+# Run ESLint
 npm run lint
 
 # Type checking
 npx tsc --noEmit
 ```
 
-### **Project Structure**
-- Follow existing component patterns
-- Use TypeScript for all new code
+### Project Structure Guidelines
+
+- All new code should use TypeScript
+- Follow the existing component patterns
+- Use the established styling system (Tailwind + custom CSS)
 - Implement proper error handling
-- Add comprehensive comments
+- Add comprehensive code comments
 
-## 🔍 **Troubleshooting**
+### Key Files
 
-### **Common Issues**
+- `src/lib/xrpl/client.ts` - Core XRPL integration
+- `src/lib/xrpl/escrow.ts` - Loan escrow management
+- `src/lib/database/db.ts` - Local database operations
+- `src/lib/contexts/AccountContext.tsx` - Global state management
+- `src/components/borrower/EnhancedBorrowerView.tsx` - Borrower interface
+- `src/components/lender/EnhancedLenderView.tsx` - Lender interface
 
-1. **Database not initialized**
-   - Refresh the page to trigger re-initialization
-   - Check browser console for errors
+## Troubleshooting
 
-2. **XRPL connection failed**
-   - Ensure internet connection
-   - Check if testnet is accessible
+### Common Issues
 
-3. **User switching not working**
-   - Wait for database initialization to complete
-   - Try refreshing the page
+**Database initialization fails:**
+- Refresh the page to retry initialization
+- Check browser console for specific errors
+- Clear browser storage if issues persist
 
-### **Debug Mode**
-Open browser console to see detailed logs:
-- Database operations
-- XRPL connection status
-- Transaction details
+**XRPL connection problems:**
+- Verify internet connectivity
+- Check if XRPL testnet is operational
+- Look for connection errors in browser console
 
-## 📄 **License**
+**User switching not working:**
+- Wait for database initialization to complete
+- Try refreshing the page
+- Check that test data has loaded properly
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Debug Information
 
-## 🏆 **Hackathon Submission**
+Open browser developer tools to see detailed logs:
+- Database operations and initialization status
+- XRPL connection and transaction details
+- User switching and authentication flow
+- Error messages and stack traces
 
-### **Demo Video**
-🎥 [Watch Demo Video](https://loom.com/your-demo-video) *(Coming Soon)*
+## Known Limitations
 
-### **Live Demo**
-🌐 [Try MicroLoanX](https://microloanx.vercel.app) *(Coming Soon)*
+### Current Demo Limitations
 
-### **Team**
-- **Your Name** - Full Stack Developer
-- **Built for**: Ripple x EasyA Singapore Hackathon 2025
+1. **Mock escrow system** - Uses simulated blockchain transactions for demo
+2. **Local data storage** - Data resets when browser storage is cleared
+3. **Single session** - No persistent user authentication
+4. **Testnet only** - Not connected to XRP Ledger mainnet
 
-### **Achievements**
-- 🎯 **Financial Inclusion**: Addressing real-world problem of unbanked populations
-- 🔒 **Privacy Innovation**: Pseudonymous lending with reputation building
-- ⚡ **XRPL Integration**: Leveraging XRPL's unique capabilities
-- 🎨 **Modern UX**: Beautiful, accessible interface design
-- 🌍 **Global Impact**: Enabling cross-border microfinance
+### Planned Improvements
+
+1. **Real XRPL escrow integration** with production contracts
+2. **Persistent user sessions** with secure authentication
+3. **IPFS metadata storage** for decentralized loan data
+4. **Mainnet deployment** with real RLUSD transactions
+5. **Enhanced security** with production-grade practices
+
+## Future Roadmap
+
+### Phase 1: MVP Enhancement
+- Complete RLUSD trust line integration
+- Implement real XRPL escrow contracts
+- Add comprehensive error handling
+- Improve mobile responsiveness
+
+### Phase 2: Advanced Features
+- Multi-currency loan support
+- Lending pool functionality
+- Advanced reputation algorithms
+- Social verification systems
+
+### Phase 3: Production Ready
+- Mainnet deployment
+- Real DID integration with established standards
+- Regulatory compliance framework
+- Mobile application development
+- Partnership integrations
+
+## Design Philosophy
+
+MicroLoanX employs a modern, accessible design system:
+
+- **Glass morphism UI** for a premium, modern feel
+- **Dark theme optimization** for extended usage
+- **Mobile-first responsive design** for global accessibility
+- **High contrast ratios** for visual accessibility
+- **Smooth animations** that enhance rather than distract
+
+The color palette emphasizes trust and reliability:
+- **Primary blue** for trustworthiness
+- **Secondary teal** for growth and stability
+- **Success green** for positive outcomes
+- **Warning amber** for pending states
+- **Error red** for negative states
+
+## Contributing
+
+We welcome contributions to MicroLoanX. Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with proper TypeScript typing
+4. Add tests for new functionality
+5. Submit a pull request with detailed description
+
+## Hackathon Context
+
+**Built for:** Ripple x EasyA Singapore Hackathon 2025
+**Problem addressed:** Financial inclusion through blockchain technology
+**Innovation:** Pseudonymous reputation-based lending on XRP Ledger
+**Impact:** Enabling microfinance for the unbanked globally
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- **Ripple** for XRP Ledger technology and RLUSD infrastructure
+- **EasyA** for organizing the hackathon and fostering innovation
+- **Next.js team** for the excellent React framework
+- **Tailwind CSS** for the utility-first styling approach
+- **xrpl.js contributors** for the comprehensive SDK
 
 ---
 
-## 🙏 **Acknowledgments**
-
-- **Ripple** for the XRP Ledger technology
-- **EasyA** for organizing the hackathon
-- **Next.js** team for the amazing framework
-- **Tailwind CSS** for the utility-first CSS framework
-- **Framer Motion** for smooth animations
-
----
-
-**Ready to explore decentralized microfinance? Start by selecting a test account and dive into the future of inclusive lending!** 🚀
+**Experience the future of inclusive finance - start by selecting a test account and exploring decentralized microloans powered by the XRP Ledger.**
