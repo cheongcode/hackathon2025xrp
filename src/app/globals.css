@@ -12,7 +12,7 @@
   --section-spacing: clamp(2rem, 8vw, 6rem);
   --card-padding: clamp(1.5rem, 4vw, 2rem);
   
-  /* Advanced typography scaling */
+  /* Advanced typography scaling with safe defaults */
   --heading-xs: clamp(0.875rem, 2vw, 1rem);
   --heading-sm: clamp(1rem, 2.5vw, 1.125rem);
   --heading-md: clamp(1.25rem, 3vw, 1.5rem);
@@ -20,6 +20,15 @@
   --heading-xl: clamp(2.25rem, 5vw, 3rem);
   --heading-2xl: clamp(3rem, 6vw, 4rem);
   --heading-3xl: clamp(3.75rem, 8vw, 5rem);
+  
+  /* Fallback sizes for initial load */
+  --fallback-xs: 0.875rem;
+  --fallback-sm: 1rem;
+  --fallback-md: 1.25rem;
+  --fallback-lg: 1.75rem;
+  --fallback-xl: 2.25rem;
+  --fallback-2xl: 3rem;
+  --fallback-3xl: 3.75rem;
 }
 
 * {
@@ -31,6 +40,8 @@
 html {
   scroll-behavior: smooth;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-size: 16px; /* Ensure base font size is set */
+  min-height: 100vh;
 }
 
 html,
@@ -52,6 +63,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   position: relative;
+  font-size: 16px; /* Ensure consistent base font size */
+  line-height: 1.6;
 }
 
 /* Enhanced background patterns for premium feel */
@@ -113,9 +126,9 @@ body::before {
   .glass-card-premium {
     @apply glass-card;
     background: linear-gradient(135deg, 
-      rgba(30, 41, 59, 0.6) 0%, 
-      rgba(30, 41, 59, 0.4) 50%, 
-      rgba(30, 41, 59, 0.6) 100%
+      rgba(30, 41, 59, 0.9) 0%, 
+      rgba(30, 41, 59, 0.7) 50%, 
+      rgba(30, 41, 59, 0.9) 100%
     );
     border: 1px solid rgba(99, 102, 241, 0.3);
     box-shadow: 
@@ -159,7 +172,7 @@ body::before {
     @apply hover:scale-105 active:scale-95;
     @apply shadow-lg hover:shadow-secondary-500/40 hover:shadow-2xl;
     @apply border border-secondary-500/30;
-    font-size: var(--heading-sm);
+    font-size: var(--heading-sm, 1rem);
     position: relative;
     overflow: hidden;
   }
@@ -187,7 +200,7 @@ body::before {
     @apply transform transition-all duration-300 ease-out;
     @apply hover:scale-105 active:scale-95;
     @apply backdrop-blur-sm;
-    font-size: var(--heading-sm);
+    font-size: var(--heading-sm, 1rem);
   }
   
   .btn-accent {
@@ -198,7 +211,7 @@ body::before {
     @apply transform transition-all duration-300 ease-out;
     @apply hover:scale-105 active:scale-95;
     @apply shadow-lg hover:shadow-accent-500/40 hover:shadow-2xl;
-    font-size: var(--heading-sm);
+    font-size: var(--heading-sm, 1rem);
   }
   
   .btn-success {
@@ -209,7 +222,7 @@ body::before {
     @apply transform transition-all duration-300 ease-out;
     @apply hover:scale-105 active:scale-95;
     @apply shadow-lg hover:shadow-success-500/40 hover:shadow-2xl;
-    font-size: var(--heading-sm);
+    font-size: var(--heading-sm, 1rem);
   }
   
   /* Responsive input system */
@@ -221,7 +234,7 @@ body::before {
     @apply transition-all duration-300 ease-out;
     @apply hover:bg-dark-600/80 focus:bg-dark-600/90;
     @apply backdrop-blur-sm;
-    font-size: var(--heading-sm);
+    font-size: var(--heading-sm, 1rem);
     font-weight: 500;
     background-color: rgba(248, 250, 252, 0.95);
     color: rgb(30, 41, 59);
@@ -268,7 +281,7 @@ body::before {
     @apply transition-all duration-300 ease-out;
     @apply hover:bg-dark-600/90 focus:bg-dark-600/95;
     @apply backdrop-blur-sm;
-    font-size: var(--heading-sm);
+    font-size: var(--heading-sm, 1rem);
     font-weight: 600;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -319,7 +332,7 @@ body::before {
     @apply inline-flex items-center rounded-full px-3 sm:px-4 py-1.5 sm:py-2;
     @apply transition-all duration-300 ease-out;
     @apply backdrop-blur-sm;
-    font-size: var(--heading-xs);
+    font-size: var(--heading-xs, 0.875rem);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -377,13 +390,13 @@ body::before {
   }
   
   /* Responsive typography system */
-  .text-responsive-xs { font-size: var(--heading-xs); }
-  .text-responsive-sm { font-size: var(--heading-sm); }
-  .text-responsive-md { font-size: var(--heading-md); }
-  .text-responsive-lg { font-size: var(--heading-lg); }
-  .text-responsive-xl { font-size: var(--heading-xl); }
-  .text-responsive-2xl { font-size: var(--heading-2xl); }
-  .text-responsive-3xl { font-size: var(--heading-3xl); }
+  .text-responsive-xs { font-size: var(--heading-xs, var(--fallback-xs)); }
+  .text-responsive-sm { font-size: var(--heading-sm, var(--fallback-sm)); }
+  .text-responsive-md { font-size: var(--heading-md, var(--fallback-md)); }
+  .text-responsive-lg { font-size: var(--heading-lg, var(--fallback-lg)); }
+  .text-responsive-xl { font-size: var(--heading-xl, var(--fallback-xl)); }
+  .text-responsive-2xl { font-size: var(--heading-2xl, var(--fallback-2xl)); }
+  .text-responsive-3xl { font-size: var(--heading-3xl, var(--fallback-3xl)); }
   
   /* Enhanced text hierarchy */
   .text-primary {
