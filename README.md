@@ -4,6 +4,20 @@
 
 MicroLoanX is a revolutionary lending platform built on the XRP Ledger that connects unbanked borrowers with global lenders through pseudonymous, reputation-based microloans. Built for the Ripple x EasyA Singapore Hackathon, this platform demonstrates how blockchain technology can solve real-world financial inclusion challenges.
 
+
+
+
+
+<img width="1482" alt="Screenshot 2025-06-08 at 11 27 07 AM" src="https://github.com/user-attachments/assets/06de053f-9c84-4493-b057-dc39401f2d43" />
+
+
+<img width="1481" alt="Screenshot 2025-06-08 at 11 28 04 AM" src="https://github.com/user-attachments/assets/d98b1c1b-36c6-4e51-ada5-e7887fd56c38" />
+
+
+<img width="1512" alt="Screenshot 2025-06-08 at 8 56 41 AM" src="https://github.com/user-attachments/assets/b5d706a4-e006-43a7-b905-7b2242eda643" />
+
+
+
 ## What MicroLoanX Solves
 
 Financial exclusion affects over 1.7 billion people worldwide who lack access to traditional banking services. MicroLoanX addresses this by:
