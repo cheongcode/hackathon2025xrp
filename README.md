@@ -354,5 +354,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Presentation slides : https://www.canva.com/design/DAGpptDxMJ0/PL_4naT3VGxGMMhm3XxQ1A/edit?ui=eyJBIjp7fX0
 
-Transaction link : https://testnet.xrpl.org/transactions/TX45678901234567890123DEF456789012345678901
+Transaction link : https://testnet.xrpl.org/transactions/764B959E857334986422B9BA51B9054D3CD3BC4A37519E018144F1465D70822E
 
