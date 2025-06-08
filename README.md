@@ -6,31 +6,31 @@ MicroLoanX is a revolutionary lending platform built on the XRP Ledger that conn
 
 <img width="250" alt="Screenshot 2025-06-08 at 11 23 05 AM" src="https://github.com/user-attachments/assets/056e52de-cb26-4063-ad21-02ef06a08aa5" />
 
-<img width="1485" alt="Screenshot 2025-06-08 at 11 25 04 AM" src="https://github.com/user-attachments/assets/25253f30-ec0f-4da9-a9e0-23456e2ecd61" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 25 04 AM" src="https://github.com/user-attachments/assets/25253f30-ec0f-4da9-a9e0-23456e2ecd61" />
 
-<img width="1464" alt="Screenshot 2025-06-08 at 11 25 17 AM" src="https://github.com/user-attachments/assets/6d4fa096-f29a-4e9b-bc6b-3370c25d6d01" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 25 17 AM" src="https://github.com/user-attachments/assets/6d4fa096-f29a-4e9b-bc6b-3370c25d6d01" />
 
-<img width="1445" alt="Screenshot 2025-06-08 at 11 25 32 AM" src="https://github.com/user-attachments/assets/95613edc-ed20-4b7e-85a7-9634bebdd152" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 25 32 AM" src="https://github.com/user-attachments/assets/95613edc-ed20-4b7e-85a7-9634bebdd152" />
 
-<img width="1459" alt="Screenshot 2025-06-08 at 11 25 43 AM" src="https://github.com/user-attachments/assets/8dc101d0-65d2-48c6-9dc6-472613c0af8e" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 25 43 AM" src="https://github.com/user-attachments/assets/8dc101d0-65d2-48c6-9dc6-472613c0af8e" />
 
-<img width="1448" alt="Screenshot 2025-06-08 at 11 25 51 AM" src="https://github.com/user-attachments/assets/17514cb0-a811-4cca-af23-82ba40670e00" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 25 51 AM" src="https://github.com/user-attachments/assets/17514cb0-a811-4cca-af23-82ba40670e00" />
 
-<img width="1502" alt="Screenshot 2025-06-08 at 11 26 05 AM" src="https://github.com/user-attachments/assets/aa8fd1da-de91-4673-960d-ec4a7756abbf" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 26 05 AM" src="https://github.com/user-attachments/assets/aa8fd1da-de91-4673-960d-ec4a7756abbf" />
 
-<img width="1495" alt="Screenshot 2025-06-08 at 11 26 23 AM" src="https://github.com/user-attachments/assets/ab6cda11-1790-4d94-986a-3b84f35fe1a2" />
-
-
-<img width="567" alt="Screenshot 2025-06-08 at 11 26 31 AM" src="https://github.com/user-attachments/assets/3b0d01c4-56aa-4d6a-bdae-dad56070fc9e" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 26 23 AM" src="https://github.com/user-attachments/assets/ab6cda11-1790-4d94-986a-3b84f35fe1a2" />
 
 
-<img width="1481" alt="Screenshot 2025-06-08 at 11 26 48 AM" src="https://github.com/user-attachments/assets/c96db6a4-c54f-46bf-92f3-8e3908792e13" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 26 31 AM" src="https://github.com/user-attachments/assets/3b0d01c4-56aa-4d6a-bdae-dad56070fc9e" />
 
 
-<img width="1469" alt="Screenshot 2025-06-08 at 11 26 57 AM" src="https://github.com/user-attachments/assets/30015ba9-9aac-4068-b3ca-48449d0d7c98" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 26 48 AM" src="https://github.com/user-attachments/assets/c96db6a4-c54f-46bf-92f3-8e3908792e13" />
 
 
-<img width="1481" alt="Screenshot 2025-06-08 at 11 28 04 AM" src="https://github.com/user-attachments/assets/0d86e5a8-2f38-48d8-af51-dac51a5ed8ef" />
+<img width="250" alt="Screenshot 2025-06-08 at 11 26 57 AM" src="https://github.com/user-attachments/assets/30015ba9-9aac-4068-b3ca-48449d0d7c98" />
+
+
+<img width="250" alt="Screenshot 2025-06-08 at 11 28 04 AM" src="https://github.com/user-attachments/assets/0d86e5a8-2f38-48d8-af51-dac51a5ed8ef" />
 
 
 
